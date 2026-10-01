@@ -18,6 +18,9 @@ const io = new Server(server, {
     }
 });
 
+// Initialize Socket.io chat handler
+require('./socket/chat')(io);
+
 // ============================================
 // MIDDLEWARE
 // ============================================
@@ -30,6 +33,8 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Serve uploaded files statically
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Make io available to routes
 app.set('io', io);
@@ -60,6 +65,9 @@ app.use('/api/bookings', bookingRoutes);
 
 const paymentRoutes = require('./routes/payment');
 app.use('/api/payments', paymentRoutes);
+
+const chatRoutes = require('./routes/chat');
+app.use('/api/chat', chatRoutes);
 
 // Health check
 app.get('/', (req, res) => {
@@ -110,15 +118,6 @@ app.use((err, req, res, next) => {
     });
 });
 
-// ============================================
-// SOCKET.IO (placeholder — will be wired up later)
-// ============================================
-io.on('connection', (socket) => {
-    console.log('🔌 Client connected:', socket.id);
-    socket.on('disconnect', () => {
-        console.log('🔌 Client disconnected:', socket.id);
-    });
-});
 
 // ============================================
 // START SERVER

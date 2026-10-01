@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chat Test - EventRent Kenya</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 20px auto; padding: 20px; background: #F8FAFC; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 16px; }
+        h1 { color: #1E3A8A; margin: 0 0 10px; }
+        h2 { color: #F97316; font-size: 14px; margin: 0 0 10px; text-transform: uppercase; letter-spacing: 1px; }
+        input, textarea, button { font-family: inherit; font-size: 14px; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; width: 100%; box-sizing: border-box; margin-bottom: 10px; }
+        button { background: #F97316; color: white; border: none; cursor: pointer; font-weight: bold; }
+        button:hover { background: #ea580c; }
+        button.secondary { background: #1E3A8A; }
+        button.secondary:hover { background: #1e40af; }
+        #messages { height: 300px; overflow-y: auto; background: #F1F5F9; padding: 12px; border-radius: 8px; margin-bottom: 10px; font-size: 14px; }
+        .msg { padding: 8px 12px; border-radius: 8px; margin-bottom: 8px; max-width: 70%; word-wrap: break-word; }
+        .msg.sent { background: #1E3A8A; color: white; margin-left: auto; text-align: right; }
+        .msg.received { background: white; border: 1px solid #e2e8f0; }
+        .meta { font-size: 11px; opacity: 0.7; margin-top: 4px; }
+        #status { padding: 8px; border-radius: 6px; text-align: center; font-weight: bold; margin-bottom: 10px; }
+        .offline { background: #fee2e2; color: #991b1b; }
+        .online { background: #dcfce7; color: #166534; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>EventRent Kenya — Chat Test</h1>
+        <div id="status" class="offline">Disconnected</div>
+    </div>
+
+    <div class="card">
+        <h2>1. Login</h2>
+        <input type="email" id="email" placeholder="Email" value="james@gmail.com">
+        <input type="password" id="password" placeholder="Password" value="password123">
+        <button class="secondary" onclick="login()">Login</button>
+    </div>
+
+    <div class="card">
+        <h2>2. Connect & Join Chat</h2>
+        <input type="number" id="otherUserId" placeholder="Other User ID" value="2">
+        <button class="secondary" onclick="connect()">Connect Socket</button>
+    </div>
+
+    <div class="card">
+        <h2>3. Messages</h2>
+        <div id="messages"></div>
+        <textarea id="messageInput" placeholder="Type a message..." rows="2"></textarea>
+        <button onclick="sendMessage()">Send</button>
+        <button class="secondary" onclick="loadHistory()" style="margin-top: 8px;">Load History</button>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        let socket = null;
+        let token = null;
+        let currentUserId = null;
+        let otherUserId = null;
+
+    async function login() {
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+
+    const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+    });
+
+    const data = await res.json();
+    if (data.status !== 'success') return alert('Login failed: ' + data.message);
+
+    token = data.token;
+    currentUserId = data.user.user_id;
+
+    // Auto-fill the correct "other user" ID based on EMAIL
+    const otherIdField = document.getElementById('otherUserId');
+    
+    if (email.toLowerCase().includes('james')) {
+        otherIdField.value = 2;   // James → Sarah
+        console.log('Set otherUserId to 2 (Sarah)');
+    } else if (email.toLowerCase().includes('sarah')) {
+        otherIdField.value = 6;   // Sarah → James
+        console.log('Set otherUserId to 6 (James)');
+    } else {
+        console.log('Unknown email — leaving otherUserId as is');
+    }
+
+    alert(`Logged in as ${data.user.full_name} (ID: ${data.user.user_id}). Chatting with user ID: ${otherIdField.value}`);
+}
+        function connect() {
+            if (!token) return alert('Login first');
+
+            otherUserId = Number(document.getElementById('otherUserId').value);
+
+            socket = io({
+                auth: { token }
+            });
+
+            socket.on('connect', () => {
+                document.getElementById('status').textContent = `Connected as User ${currentUserId}`;
+                document.getElementById('status').className = 'online';
+                socket.emit('join_room', { other_user_id: otherUserId });
+            });
+
+            socket.on('receive_message', (msg) => {
+                addMessage(msg);
+            });
+
+            socket.on('new_message_notification', (data) => {
+                console.log('Notification:', data);
+            });
+
+            socket.on('error', (err) => {
+                console.error('Socket error:', err);
+                alert('Socket error: ' + err.message);
+            });
+
+            socket.on('connect_error', (err) => {
+                console.error('Connection error:', err.message);
+                document.getElementById('status').textContent = 'Connection failed: ' + err.message;
+                document.getElementById('status').className = 'offline';
+            });
+
+            socket.on('disconnect', () => {
+                document.getElementById('status').textContent = 'Disconnected';
+                document.getElementById('status').className = 'offline';
+            });
+
+            loadHistory();
+        }
+
+        function sendMessage() {
+            const text = document.getElementById('messageInput').value.trim();
+            if (!text || !socket) return;
+
+            socket.emit('send_message', {
+                receiver_id: otherUserId,
+                message_text: text
+            });
+
+            document.getElementById('messageInput').value = '';
+        }
+
+        function addMessage(msg) {
+            const box = document.getElementById('messages');
+            const div = document.createElement('div');
+            const isSent = msg.sender_id === currentUserId;
+
+            div.className = 'msg ' + (isSent ? 'sent' : 'received');
+            div.innerHTML = `
+                <div>${msg.message_text}</div>
+                <div class="meta">${new Date(msg.sent_at).toLocaleTimeString()}</div>
+            `;
+            box.appendChild(div);
+            box.scrollTop = box.scrollHeight;
+        }
+
+
+        if (!otherUserId || isNaN(otherUserId) || otherUserId <= 0) return;
+
+        
+        async function loadHistory() {
+            const res = await fetch(`/api/chat/history/${otherUserId}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+            if (data.status !== 'success') return;
+
+            document.getElementById('messages').innerHTML = '';
+            data.messages.forEach(addMessage);
+        }
+
+        document.getElementById('messageInput').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+    </script>
+</body>
+</html>
