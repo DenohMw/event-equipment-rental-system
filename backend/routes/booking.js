@@ -16,8 +16,27 @@ function generateBookingRef() {
 }
 
 // ============================================
+// HELPER: Recalculate equipment availability
+// Sets quantity_available = quantity_total - sum of active bookings
+// Active statuses: confirmed, paid, delivered, rented
+// Uses the given connection or the pool. Runs outside any lock.
+// ============================================
+async function recalculateEquipmentAvailability(connOrPool, equipmentId) {
+    await connOrPool.query(`
+        UPDATE Equipment e
+        SET quantity_available = GREATEST(0, e.quantity_total - COALESCE(
+            (SELECT SUM(b.quantity)
+             FROM Booking b
+             WHERE b.equipment_id = e.equipment_id
+               AND b.status IN ('confirmed','paid','delivered','rented')),
+            0
+        ))
+        WHERE e.equipment_id = ?
+    `, [equipmentId]);
+}
+
+// ============================================
 // GET /api/bookings/check-availability
-// Check if equipment is available for given dates
 // ============================================
 router.get('/check-availability', async (req, res) => {
     const { equipment_id, quantity, start_date, end_date } = req.query;
@@ -54,7 +73,6 @@ router.get('/check-availability', async (req, res) => {
         const available = Number(info.available_quantity);
         const canBook = available >= requested;
 
-        // Calculate cost
         const days = Math.ceil((new Date(end_date) - new Date(start_date)) / (1000 * 60 * 60 * 24)) + 1;
         const subtotal = Number(info.price_per_day) * requested * days;
         const service_fee = subtotal * 0.10;
@@ -70,8 +88,8 @@ router.get('/check-availability', async (req, res) => {
             subtotal: subtotal.toFixed(2),
             service_fee: service_fee.toFixed(2),
             total_amount: total.toFixed(2),
-            message: canBook 
-                ? 'Equipment is available for these dates' 
+            message: canBook
+                ? 'Equipment is available for these dates'
                 : `Only ${available} available. You requested ${requested}.`
         });
 
@@ -99,7 +117,6 @@ router.post('/', verifyToken, requireRole('customer'), async (req, res) => {
     try {
         await conn.beginTransaction();
 
-        // 1. Lock equipment row
         const [equip] = await conn.query(
             'SELECT owner_id, price_per_day, quantity_total FROM Equipment WHERE equipment_id = ? AND is_available = TRUE AND is_approved = TRUE FOR UPDATE',
             [equipment_id]
@@ -112,7 +129,6 @@ router.post('/', verifyToken, requireRole('customer'), async (req, res) => {
 
         const { owner_id, price_per_day, quantity_total } = equip[0];
 
-        // 2. Check availability within transaction
         const [booked] = await conn.query(`
             SELECT COALESCE(SUM(quantity), 0) AS booked
             FROM Booking
@@ -131,14 +147,12 @@ router.post('/', verifyToken, requireRole('customer'), async (req, res) => {
             });
         }
 
-        // 3. Calculate costs
         const days = Math.ceil((new Date(end_date) - new Date(start_date)) / (1000 * 60 * 60 * 24)) + 1;
         const subtotal = Number(price_per_day) * quantity * days;
         const service_fee = subtotal * 0.10;
         const total_amount = subtotal + service_fee;
         const booking_ref = generateBookingRef();
 
-        // 4. Insert booking
         const [result] = await conn.query(`
             INSERT INTO Booking
             (booking_ref, customer_id, equipment_id, owner_id, quantity, start_date, end_date,
@@ -152,13 +166,19 @@ router.post('/', verifyToken, requireRole('customer'), async (req, res) => {
 
         const bookingId = result.insertId;
 
-        // 5. Notify owner
         await conn.query(`
             INSERT INTO Notification (user_id, title, message, type, reference_id)
             VALUES (?, 'New Booking Request', ?, 'booking', ?)
         `, [owner_id, `New booking ${booking_ref} for quantity ${quantity}`, bookingId]);
 
         await conn.commit();
+
+        // Recalculate availability OUTSIDE the transaction to avoid deadlocks
+        try {
+            await recalculateEquipmentAvailability(db, equipment_id);
+        } catch (recalcErr) {
+            console.error('Availability recalculation failed (non-fatal):', recalcErr);
+        }
 
         res.status(201).json({
             status: 'success',
@@ -179,9 +199,9 @@ router.post('/', verifyToken, requireRole('customer'), async (req, res) => {
         });
 
     } catch (err) {
-        await conn.rollback();
-        console.error(err);
-        res.status(500).json({ status: 'error', message: 'Booking failed: ' + err.message });
+        try { await conn.rollback(); } catch (e) { /* ignore */ }
+        console.error('Booking creation error:', err);
+        res.status(500).json({ status: 'error', message: 'We could not create your booking right now. Please try again shortly.' });
     } finally {
         conn.release();
     }
@@ -283,7 +303,6 @@ router.get('/:id', verifyToken, async (req, res) => {
 
         const booking = rows[0];
 
-        // Access: customer who made it, owner of the equipment, or admin
         const isCustomer = booking.customer_id === req.user.user_id;
         const isOwner = booking.owner_id === req.user.user_id;
         const isAdmin = req.user.role === 'admin';
@@ -301,12 +320,14 @@ router.get('/:id', verifyToken, async (req, res) => {
 
 // ============================================
 // PUT /api/bookings/:id/status — Update booking status
+// Uses a simple direct query without long-lived locks.
+// Availability is recalculated AFTER the update is committed.
 // ============================================
 router.put('/:id/status', verifyToken, async (req, res) => {
     const { status, return_condition, damage_charges, late_fee, notes } = req.body;
 
     const validStatuses = ['confirmed', 'delivered', 'rented', 'returned', 'completed', 'cancelled'];
-    if (!status || !validStatuses.includes(status)) {
+    if (!status || validStatuses.indexOf(status) === -1) {
         return res.status(400).json({
             status: 'error',
             message: `Invalid status. Allowed: ${validStatuses.join(', ')}`
@@ -314,9 +335,9 @@ router.put('/:id/status', verifyToken, async (req, res) => {
     }
 
     try {
-        // Get current booking
+        // 1. Fetch current booking
         const [bookings] = await db.query(
-            'SELECT owner_id, customer_id, status AS current_status FROM Booking WHERE booking_id = ?',
+            'SELECT booking_id, equipment_id, owner_id, customer_id, status AS current_status FROM Booking WHERE booking_id = ?',
             [req.params.id]
         );
 
@@ -329,25 +350,27 @@ router.put('/:id/status', verifyToken, async (req, res) => {
         const isCustomer = booking.customer_id === req.user.user_id;
         const isAdmin = req.user.role === 'admin';
 
-        // Ownership rules per transition
+        // 2. Access control
         if (!isAdmin && !isOwner && !isCustomer) {
             return res.status(403).json({ status: 'error', message: 'Access denied' });
         }
 
-        // Only owner/admin can confirm, deliver, mark rented/returned/completed
-        // Customer can only cancel (and only if requested)
+        // Customer can only cancel bookings in 'requested' state
         if (status === 'cancelled' && isCustomer && !isOwner && !isAdmin) {
             if (booking.current_status !== 'requested') {
                 return res.status(400).json({
                     status: 'error',
-                    message: 'Can only cancel bookings in "requested" state'
+                    message: 'You can only cancel bookings in "requested" state'
                 });
             }
-        } else if (!isOwner && !isAdmin) {
-            return res.status(403).json({ status: 'error', message: 'Only owner or admin can perform this action' });
+        } else if (!isOwner && !isAdmin && !(status === 'cancelled' && isCustomer)) {
+            return res.status(403).json({
+                status: 'error',
+                message: 'Only owner or admin can perform this action'
+            });
         }
 
-        // Build update
+        // 3. Build update query
         let sql = 'UPDATE Booking SET status = ?';
         const params = [status];
 
@@ -362,9 +385,47 @@ router.put('/:id/status', verifyToken, async (req, res) => {
 
         await db.query(sql, params);
 
-        res.json({ status: 'success', message: `Booking status updated to ${status}` });
+        // 4. Recalculate availability AFTER the update is committed
+        try {
+            await recalculateEquipmentAvailability(db, booking.equipment_id);
+        } catch (recalcErr) {
+            console.error('Availability recalculation failed (non-fatal):', recalcErr);
+        }
+
+        // 5. Notify the other party
+        const notifyUserId = isCustomer ? booking.owner_id : booking.customer_id;
+        const statusTitles = {
+            confirmed: 'Booking Confirmed',
+            delivered: 'Equipment Delivered',
+            rented: 'Rental Started',
+            returned: 'Equipment Returned',
+            completed: 'Rental Completed',
+            cancelled: 'Booking Cancelled'
+        };
+
+        if (notifyUserId && statusTitles[status]) {
+            try {
+                await db.query(`
+                    INSERT INTO Notification (user_id, title, message, type, reference_id)
+                    VALUES (?, ?, ?, 'booking', ?)
+                `, [
+                    notifyUserId,
+                    statusTitles[status],
+                    `Booking ${req.params.id} status changed to ${status}`,
+                    req.params.id
+                ]);
+            } catch (notifErr) {
+                console.error('Notification insert failed (non-fatal):', notifErr);
+            }
+        }
+
+        res.json({
+            status: 'success',
+            message: `Booking status updated to ${status}`
+        });
+
     } catch (err) {
-        console.error(err);
+        console.error('Booking status update error:', err);
         res.status(500).json({ status: 'error', message: 'Failed to update booking' });
     }
 });

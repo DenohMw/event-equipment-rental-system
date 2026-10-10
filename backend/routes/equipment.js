@@ -1,7 +1,30 @@
 const express = require('express');
+const multer = require('multer');
+const fs = require('fs');
+const path = require('path');
+const crypto = require('crypto');
 const db = require('../config/db');
 const { verifyToken, requireRole } = require('../middleware/auth');
 const router = express.Router();
+
+const equipmentUploadDir = path.join(__dirname, '..', 'uploads', 'equipment');
+fs.mkdirSync(equipmentUploadDir, { recursive: true });
+const equipmentImageUpload = multer({
+    storage: multer.diskStorage({
+        destination: equipmentUploadDir,
+        filename: (req, file, callback) => {
+            const extension = path.extname(file.originalname).toLowerCase();
+            callback(null, `${Date.now()}-${crypto.randomBytes(8).toString('hex')}${extension}`);
+        }
+    }),
+    limits: { fileSize: 5 * 1024 * 1024, files: 5 },
+    fileFilter: (req, file, callback) => {
+        if (!file.mimetype || !file.mimetype.startsWith('image/')) {
+            return callback(new Error('Only image files are allowed'));
+        }
+        callback(null, true);
+    }
+});
 
 // ============================================
 // GET /api/equipment/categories — List all categories
@@ -20,12 +43,53 @@ router.get('/categories', async (req, res) => {
 });
 
 // ============================================
+// GET /api/equipment/locations
+// List all active Kenyan locations, grouped by region
+// ============================================
+router.get('/locations', async (req, res) => {
+    try {
+        const [rows] = await db.query(`
+            SELECT location_id, name, county, region 
+            FROM Location 
+            WHERE is_active = TRUE 
+            ORDER BY region, county, name
+        `);
+
+        // Group by region for easier dropdown rendering
+        const grouped = {};
+        rows.forEach(function (loc) {
+            if (!grouped[loc.region]) {
+                grouped[loc.region] = [];
+            }
+            grouped[loc.region].push({
+                location_id: loc.location_id,
+                name: loc.name,
+                county: loc.county
+            });
+        });
+
+        res.json({
+            status: 'success',
+            total: rows.length,
+            locations: rows,
+            grouped: grouped
+        });
+    } catch (err) {
+        console.error('Locations error:', err);
+        res.status(500).json({
+            status: 'error',
+            message: 'Failed to fetch locations'
+        });
+    }
+});
+
+// ============================================
 // GET /api/equipment — List equipment with filters
 // ============================================
 router.get('/', async (req, res) => {
-    const { 
-        category, location, min_price, max_price, search, 
-        sort = 'newest', page = 1, limit = 12 
+    const {
+        category, location, region, county, min_price, max_price, search,
+        sort = 'newest', page = 1, limit = 12
     } = req.query;
 
     let sql = `
@@ -57,11 +121,18 @@ router.get('/', async (req, res) => {
 
     if (category) { sql += ' AND c.name = ?'; params.push(category); }
     if (location) { sql += ' AND e.location = ?'; params.push(location); }
+    if (region) {
+        sql += ' AND e.location IN (SELECT name FROM Location WHERE is_active = TRUE AND region = ?)';
+        params.push(region);
+    }
+    if (county) {
+        sql += ' AND e.location IN (SELECT name FROM Location WHERE is_active = TRUE AND county = ?)';
+        params.push(county);
+    }
     if (min_price) { sql += ' AND e.price_per_day >= ?'; params.push(Number(min_price)); }
     if (max_price) { sql += ' AND e.price_per_day <= ?'; params.push(Number(max_price)); }
     if (search) { sql += ' AND (e.name LIKE ? OR e.description LIKE ?)'; params.push(`%${search}%`, `%${search}%`); }
 
-    // Sorting
     const sortOptions = {
         'newest': 'e.created_at DESC',
         'price_low': 'e.price_per_day ASC',
@@ -71,7 +142,6 @@ router.get('/', async (req, res) => {
     };
     sql += ` ORDER BY ${sortOptions[sort] || sortOptions.newest}`;
 
-    // Pagination
     const offset = (Number(page) - 1) * Number(limit);
     sql += ' LIMIT ? OFFSET ?';
     params.push(Number(limit), offset);
@@ -79,7 +149,6 @@ router.get('/', async (req, res) => {
     try {
         const [rows] = await db.query(sql, params);
 
-        // Get total count for pagination
         let countSql = `
             SELECT COUNT(*) AS total
             FROM Equipment e
@@ -89,6 +158,14 @@ router.get('/', async (req, res) => {
         const countParams = [];
         if (category) { countSql += ' AND c.name = ?'; countParams.push(category); }
         if (location) { countSql += ' AND e.location = ?'; countParams.push(location); }
+        if (region) {
+            countSql += ' AND e.location IN (SELECT name FROM Location WHERE is_active = TRUE AND region = ?)';
+            countParams.push(region);
+        }
+        if (county) {
+            countSql += ' AND e.location IN (SELECT name FROM Location WHERE is_active = TRUE AND county = ?)';
+            countParams.push(county);
+        }
         if (min_price) { countSql += ' AND e.price_per_day >= ?'; countParams.push(Number(min_price)); }
         if (max_price) { countSql += ' AND e.price_per_day <= ?'; countParams.push(Number(max_price)); }
         if (search) { countSql += ' AND (e.name LIKE ? OR e.description LIKE ?)'; countParams.push(`%${search}%`, `%${search}%`); }
@@ -161,13 +238,11 @@ router.get('/:id', async (req, res) => {
             return res.status(404).json({ status: 'error', message: 'Equipment not found' });
         }
 
-        // Get all images
         const [images] = await db.query(
             'SELECT image_id, image_url, is_primary, display_order FROM EquipmentImage WHERE equipment_id = ? ORDER BY display_order',
             [req.params.id]
         );
 
-        // Get recent reviews
         const [reviews] = await db.query(`
             SELECT r.review_id, r.rating, r.comment, r.is_recommended, r.created_at,
                    u.full_name AS customer_name
@@ -192,13 +267,14 @@ router.get('/:id', async (req, res) => {
 // ============================================
 // POST /api/equipment — Add new equipment (owner only)
 // ============================================
-router.post('/', verifyToken, requireRole('owner'), async (req, res) => {
+router.post('/', verifyToken, requireRole('owner'), equipmentImageUpload.array('images', 5), async (req, res) => {
     const {
         category_id, name, description, price_per_day,
         quantity_total, location, rental_conditions
     } = req.body;
 
     if (!category_id || !name || !price_per_day || !quantity_total || !location) {
+        for (const file of req.files || []) fs.unlink(file.path, () => {});
         return res.status(400).json({
             status: 'error',
             message: 'Missing required fields: category_id, name, price_per_day, quantity_total, location'
@@ -212,9 +288,31 @@ router.post('/', verifyToken, requireRole('owner'), async (req, res) => {
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE, FALSE)
         `, [
             req.user.user_id, category_id, name, description || null,
-            price_per_day, quantity_total, quantity_total, location,
-            rental_conditions || null
+            Number(price_per_day), Number(quantity_total), Number(quantity_total),
+            location, rental_conditions || null
         ]);
+
+        const files = req.files || [];
+        if (files.length) {
+            const connection = await db.getConnection();
+            try {
+                await connection.beginTransaction();
+                for (let index = 0; index < files.length; index++) {
+                    await connection.query(
+                        `INSERT INTO EquipmentImage (equipment_id, image_url, is_primary, display_order)
+                         VALUES (?, ?, ?, ?)`,
+                        [result.insertId, `/uploads/equipment/${files[index].filename}`, index === 0, index]
+                    );
+                }
+                await connection.commit();
+            } catch (imageError) {
+                await connection.rollback();
+                await db.query('DELETE FROM Equipment WHERE equipment_id = ?', [result.insertId]);
+                throw imageError;
+            } finally {
+                connection.release();
+            }
+        }
 
         res.status(201).json({
             status: 'success',
@@ -222,13 +320,18 @@ router.post('/', verifyToken, requireRole('owner'), async (req, res) => {
             equipment_id: result.insertId
         });
     } catch (err) {
+        for (const file of req.files || []) {
+            fs.unlink(file.path, () => {});
+        }
         console.error(err);
         res.status(500).json({ status: 'error', message: 'Failed to add equipment' });
     }
 });
 
 // ============================================
-// PUT /api/equipment/:id — Update (owner of that equipment only)
+// PUT /api/equipment/:id — Update (owner only)
+// Builds the UPDATE dynamically and recalculates quantity_available
+// whenever quantity_total changes.
 // ============================================
 router.put('/:id', verifyToken, requireRole('owner'), async (req, res) => {
     const {
@@ -237,7 +340,7 @@ router.put('/:id', verifyToken, requireRole('owner'), async (req, res) => {
     } = req.body;
 
     try {
-        // Verify ownership
+        // 1. Verify ownership
         const [existing] = await db.query(
             'SELECT owner_id FROM Equipment WHERE equipment_id = ?',
             [req.params.id]
@@ -251,24 +354,122 @@ router.put('/:id', verifyToken, requireRole('owner'), async (req, res) => {
             return res.status(403).json({ status: 'error', message: 'Not your equipment' });
         }
 
-        await db.query(`
-            UPDATE Equipment SET
-                name = COALESCE(?, name),
-                description = COALESCE(?, description),
-                price_per_day = COALESCE(?, price_per_day),
-                quantity_total = COALESCE(?, quantity_total),
-                location = COALESCE(?, location),
-                rental_conditions = COALESCE(?, rental_conditions),
-                is_available = COALESCE(?, is_available)
-            WHERE equipment_id = ?
-        `, [
-            name, description, price_per_day, quantity_total,
-            location, rental_conditions, is_available, req.params.id
-        ]);
+        // 2. Build the update dynamically
+        const updates = [];
+        const params = [];
+        let quantityChanged = false;
 
-        res.json({ status: 'success', message: 'Equipment updated' });
+        if (name !== undefined && name !== null && String(name).trim() !== '') {
+            updates.push('name = ?');
+            params.push(String(name).trim());
+        }
+
+        if (description !== undefined && description !== null) {
+            updates.push('description = ?');
+            const desc = String(description).trim();
+            params.push(desc === '' ? null : desc);
+        }
+
+        if (price_per_day !== undefined && price_per_day !== null && price_per_day !== '') {
+            const price = Number(price_per_day);
+            if (isNaN(price) || price < 0) {
+                return res.status(400).json({ status: 'error', message: 'Invalid price_per_day' });
+            }
+            updates.push('price_per_day = ?');
+            params.push(price);
+        }
+
+        if (quantity_total !== undefined && quantity_total !== null && quantity_total !== '') {
+            const qty = Number(quantity_total);
+            if (isNaN(qty) || qty < 1) {
+                return res.status(400).json({ status: 'error', message: 'Invalid quantity_total' });
+            }
+            updates.push('quantity_total = ?');
+            params.push(qty);
+            quantityChanged = true;
+        }
+
+        if (location !== undefined && location !== null && String(location).trim() !== '') {
+            updates.push('location = ?');
+            params.push(String(location).trim());
+        }
+
+        if (rental_conditions !== undefined && rental_conditions !== null) {
+            updates.push('rental_conditions = ?');
+            const cond = String(rental_conditions).trim();
+            params.push(cond === '' ? null : cond);
+        }
+
+        if (is_available !== undefined && is_available !== null) {
+            updates.push('is_available = ?');
+            params.push(is_available ? 1 : 0);
+        }
+
+        if (updates.length === 0) {
+            return res.status(400).json({
+                status: 'error',
+                message: 'No fields provided for update'
+            });
+        }
+
+        // 3. If quantity_total is being reduced, ensure it does not
+        // fall below the number of currently booked units.
+        if (quantityChanged) {
+            const [booked] = await db.query(`
+                SELECT COALESCE(SUM(quantity), 0) AS booked
+                FROM Booking
+                WHERE equipment_id = ?
+                  AND status IN ('confirmed','paid','delivered','rented')
+            `, [req.params.id]);
+
+            const bookedQty = Number(booked[0].booked);
+            const newTotal = Number(quantity_total);
+
+            if (bookedQty > newTotal) {
+                return res.status(400).json({
+                    status: 'error',
+                    message: `Cannot reduce total below ${bookedQty} units. That many are currently reserved by active bookings.`
+                });
+            }
+        }
+
+        // 4. Run the update
+        params.push(req.params.id);
+
+        await db.query(
+            'UPDATE Equipment SET ' + updates.join(', ') + ' WHERE equipment_id = ?',
+            params
+        );
+
+        // 5. Recalculate quantity_available if quantity_total changed
+        if (quantityChanged) {
+            await db.query(`
+                UPDATE Equipment e
+                SET quantity_available = GREATEST(0, e.quantity_total - COALESCE(
+                    (SELECT SUM(b.quantity)
+                     FROM Booking b
+                     WHERE b.equipment_id = e.equipment_id
+                       AND b.status IN ('confirmed','paid','delivered','rented')),
+                    0
+                ))
+                WHERE e.equipment_id = ?
+            `, [req.params.id]);
+        }
+
+        // 6. Return the fresh row
+        const [updated] = await db.query(
+            'SELECT equipment_id, name, description, price_per_day, quantity_total, quantity_available, location, rental_conditions, is_available FROM Equipment WHERE equipment_id = ?',
+            [req.params.id]
+        );
+
+        res.json({
+            status: 'success',
+            message: 'Equipment updated',
+            equipment: updated[0]
+        });
+
     } catch (err) {
-        console.error(err);
+        console.error('Equipment update error:', err);
         res.status(500).json({ status: 'error', message: 'Failed to update equipment' });
     }
 });

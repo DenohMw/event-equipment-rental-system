@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" sizes="512x512" href="/assets/images/icons/favicon.png">
+    <link rel="shortcut icon" type="image/png" href="/assets/images/icons/favicon.png">
+    <link rel="apple-touch-icon" sizes="512x512" href="/assets/images/icons/favicon.png">
+    <meta name="theme-color" content="#1E3A8A">
+    <title>Coming Soon - EventEquip Kenya</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/assets/css/base.css">
+    <link rel="stylesheet" href="/assets/css/layout.css">
+    <link rel="stylesheet" href="/assets/css/components.css">
+    <link rel="stylesheet" href="/assets/css/pages.css">
+    <style>
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #F8FAFC 0%, #e0e7ff 100%);
+            padding: 24px;
+        }
+        .card {
+            width: 100%;
+            max-width: 520px;
+            background: white;
+            border-radius: 16px;
+            padding: 48px 40px;
+            text-align: center;
+            box-shadow: 0 20px 25px rgba(15, 23, 42, 0.1);
+        }
+        .brand-lockup {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 28px;
+            color: #0F172A;
+            font-weight: 800;
+            font-size: 17px;
+        }
+        .brand-lockup img {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+        }
+        .brand-lockup small {
+            display: block;
+            margin-top: 2px;
+            color: #64748B;
+            font-size: 9px;
+            letter-spacing: 0.18em;
+        }
+        .card-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 20px;
+            background: linear-gradient(135deg, #fed7aa, #fdba74);
+            color: #ea580c;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 24px;
+        }
+        .card-icon svg {
+            width: 40px;
+            height: 40px;
+            stroke-width: 2;
+        }
+        .card h1 {
+            font-size: 26px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: #0F172A;
+        }
+        .card p {
+            font-size: 14.5px;
+            color: #64748B;
+            line-height: 1.6;
+            margin-bottom: 32px;
+        }
+        .card-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .user-info {
+            padding: 16px;
+            background: #F8FAFC;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            text-align: left;
+        }
+        .user-info-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            padding: 6px 0;
+        }
+        .user-info-label {
+            color: #64748B;
+        }
+        .user-info-value {
+            font-weight: 600;
+            color: #0F172A;
+        }
+    </style>
+    <link rel="stylesheet" href="/assets/css/polish.css">
+</head>
+<body>
+
+<div class="card">
+    <a class="brand-lockup" href="/" style="text-decoration: none;">
+        <img src="/assets/images/icons/Icon.png" alt="">
+        <span>EventEquip<small>KENYA</small></span>
+    </a>
+    <div class="card-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <circle cx="12" cy="12" r="9"/>
+            <path stroke-linecap="round" d="M12 6v6l4 2"/>
+        </svg>
+    </div>
+
+    <h1>Dashboard Coming Soon</h1>
+    <p>
+        Your account has been created successfully. The dashboard for your
+        role is currently being built and will be available shortly.
+    </p>
+
+    <div class="user-info" id="userInfo">
+        <div class="user-info-row">
+            <span class="user-info-label">Name</span>
+            <span class="user-info-value" data-user="name">-</span>
+        </div>
+        <div class="user-info-row">
+            <span class="user-info-label">Email</span>
+            <span class="user-info-value" data-user="email">-</span>
+        </div>
+        <div class="user-info-row">
+            <span class="user-info-label">Role</span>
+            <span class="user-info-value" data-user="role">-</span>
+        </div>
+    </div>
+
+    <div class="card-actions">
+        <a href="/" class="btn btn-secondary">Back to Home</a>
+        <button class="btn btn-primary" onclick="Auth.logout()">Logout</button>
+    </div>
+</div>
+
+<script src="/assets/js/config.js"></script>
+<script src="/assets/js/auth.js"></script>
+<script src="/assets/js/utils.js"></script>
+<script src="/assets/js/api.js"></script>
+<script src="/assets/js/ui.js"></script>
+<script>
+    // Require login
+    const user = Auth.requireAuth();
+    if (!user) throw new Error('Not authorized');
+
+    // Populate user info
+    document.querySelectorAll('[data-user="name"]').forEach(function (el) {
+        el.textContent = user.full_name;
+    });
+    document.querySelectorAll('[data-user="email"]').forEach(function (el) {
+        el.textContent = user.email || '-';
+    });
+    document.querySelectorAll('[data-user="role"]').forEach(function (el) {
+        el.textContent = user.role.charAt(0).toUpperCase() + user.role.slice(1);
+    });
+</script>
+
+    <script defer src="/assets/js/motion.js"></script>
+</body>
+</html>

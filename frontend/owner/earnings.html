@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" sizes="512x512" href="/assets/images/icons/favicon.png">
+    <link rel="shortcut icon" type="image/png" href="/assets/images/icons/favicon.png">
+    <link rel="apple-touch-icon" sizes="512x512" href="/assets/images/icons/favicon.png">
+    <meta name="theme-color" content="#1E3A8A">
+    <title>Earnings and Wallet - EventEquip Kenya</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/assets/css/base.css">
+    <link rel="stylesheet" href="/assets/css/layout.css">
+    <link rel="stylesheet" href="/assets/css/components.css">
+    <link rel="stylesheet" href="/assets/css/pages.css">
+    <style>
+        .wallet-banner {
+            background: linear-gradient(135deg, #1E3A8A 0%, #1e40af 100%);
+            color: white;
+            padding: 32px;
+            border-radius: 16px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 24px;
+            position: relative;
+            overflow: hidden;
+        }
+        .wallet-banner::before {
+            content: '';
+            position: absolute;
+            top: -60%;
+            right: -10%;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(249, 115, 22, 0.18), transparent 70%);
+            pointer-events: none;
+        }
+        .wallet-banner-content {
+            position: relative;
+            z-index: 1;
+            flex: 1;
+        }
+        .wallet-banner-label {
+            font-size: 13px;
+            font-weight: 600;
+            opacity: 0.85;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+        .wallet-banner-value {
+            font-size: 40px;
+            font-weight: 800;
+            line-height: 1;
+            letter-spacing: -0.02em;
+            margin-bottom: 12px;
+        }
+        .wallet-banner-hint {
+            font-size: 13px;
+            opacity: 0.75;
+        }
+        .wallet-banner-actions {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .metric-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 20px;
+        }
+        .metric-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 12px;
+        }
+        .metric-icon svg {
+            width: 20px;
+            height: 20px;
+            stroke-width: 2;
+        }
+        .metric-icon-navy    { background: #dbeafe; color: #1E3A8A; }
+        .metric-icon-warning { background: #fef3c7; color: #92400e; }
+        .metric-icon-success { background: #d1fae5; color: #065f46; }
+        .metric-icon-purple  { background: #ede9fe; color: #5b21b6; }
+        .metric-label {
+            font-size: 12.5px;
+            color: #64748B;
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+        .metric-value {
+            font-size: 24px;
+            font-weight: 700;
+            line-height: 1.1;
+            color: #0F172A;
+        }
+        .metric-trend {
+            font-size: 12px;
+            margin-top: 6px;
+            font-weight: 600;
+            color: #64748B;
+        }
+
+        /* Withdrawal form */
+        .withdraw-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 24px;
+        }
+        .withdraw-card-title {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .withdraw-card-title svg {
+            width: 18px;
+            height: 18px;
+            color: #F97316;
+            stroke-width: 2.5;
+        }
+        .withdraw-card-subtitle {
+            font-size: 13px;
+            color: #64748B;
+            margin-bottom: 20px;
+        }
+
+        .withdraw-summary {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        .withdraw-summary-item {
+            padding: 12px 16px;
+            background: #F8FAFC;
+            border-radius: 8px;
+        }
+        .withdraw-summary-label {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #64748B;
+            margin-bottom: 4px;
+        }
+        .withdraw-summary-value {
+            font-size: 16px;
+            font-weight: 700;
+            color: #0F172A;
+        }
+        .withdraw-summary-value.green {
+            color: #10B981;
+        }
+
+        /* Transaction history */
+        .tx-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 0;
+            border-bottom: 1px solid #e2e8f0;
+            gap: 16px;
+        }
+        .tx-row:last-child {
+            border-bottom: none;
+        }
+        .tx-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+            min-width: 0;
+        }
+        .tx-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .tx-icon.income {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        .tx-icon.withdraw {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        .tx-icon svg {
+            width: 18px;
+            height: 18px;
+            stroke-width: 2;
+        }
+        .tx-details {
+            flex: 1;
+            min-width: 0;
+        }
+        .tx-title {
+            font-size: 13.5px;
+            font-weight: 600;
+            color: #0F172A;
+            margin-bottom: 3px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .tx-meta {
+            font-size: 11.5px;
+            color: #64748B;
+        }
+        .tx-amount {
+            text-align: right;
+            flex-shrink: 0;
+        }
+        .tx-amount-value {
+            font-size: 15px;
+            font-weight: 700;
+        }
+        .tx-amount-value.positive { color: #10B981; }
+        .tx-amount-value.negative { color: #EF4444; }
+        .tx-amount-date {
+            font-size: 11px;
+            color: #64748B;
+            margin-top: 2px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 4px;
+            border-bottom: 1px solid #e2e8f0;
+            margin-bottom: 20px;
+        }
+        .tab {
+            padding: 12px 20px;
+            font-size: 13.5px;
+            font-weight: 600;
+            color: #64748B;
+            border-bottom: 2px solid transparent;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            background: transparent;
+            border-top: none;
+            border-left: none;
+            border-right: none;
+            font-family: inherit;
+        }
+        .tab:hover { color: #0F172A; }
+        .tab.active {
+            color: #F97316;
+            border-bottom-color: #F97316;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #64748B;
+        }
+        .empty-state-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #0F172A;
+            margin-bottom: 6px;
+        }
+        .empty-state-message {
+            font-size: 13.5px;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        @media (max-width: 768px) {
+            .wallet-banner {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .wallet-banner-value {
+                font-size: 32px;
+            }
+            .withdraw-summary {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="/assets/css/polish.css">
+</head>
+<body>
+
+<div class="app-shell">
+
+    <aside class="sidebar"></aside>
+
+    <main class="app-main">
+
+        <div class="topbar">
+            <div class="topbar-left">
+                <button class="topbar-toggle" onclick="UI.toggleSidebar()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" d="M4 6h16M4 12h16M4 18h16"/>
+                    </svg>
+                </button>
+                <div class="topbar-search">
+                    <svg class="topbar-search-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="7"/>
+                        <path stroke-linecap="round" d="M21 21l-4.35-4.35"/>
+                    </svg>
+                    <input type="text" id="topSearch" placeholder="Search...">
+                </div>
+            </div>
+            <div class="topbar-right">
+                <button class="topbar-icon-btn" onclick="window.location.href='/owner/chat.html'">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M21 12a8 8 0 11-3.5 6.6L3 21l2.4-6.5A8 8 0 0121 12z"/>
+                    </svg>
+                    <span class="topbar-icon-badge" id="chatBadge" style="display: none;">0</span>
+                </button>
+                <button class="topbar-icon-btn" data-action="logout" title="Logout">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                    </svg>
+                </button>
+                <div class="topbar-user">
+                    <div class="topbar-user-avatar" data-user="initials">?</div>
+                    <div class="topbar-user-meta">
+                        <div class="topbar-user-name" data-user="name">Loading...</div>
+                        <div class="topbar-user-role" data-user="role"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="app-content">
+
+            <div class="page-header">
+                <h1 class="page-title">Earnings and Wallet</h1>
+                <p class="page-subtitle">Track your earnings, transactions and withdrawals</p>
+            </div>
+
+            <!-- WALLET BANNER -->
+            <div class="wallet-banner">
+                <div class="wallet-banner-content">
+                    <div class="wallet-banner-label">Available Balance</div>
+                    <div class="wallet-banner-value" id="availableBalance">KSh 0</div>
+                    <div class="wallet-banner-hint">This is the amount you can withdraw to your M-Pesa</div>
+                </div>
+                <div class="wallet-banner-actions">
+                    <button class="btn btn-primary btn-lg" onclick="scrollToWithdraw()">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                            <path stroke-linecap="round" d="M12 5v14M5 12h14"/>
+                        </svg>
+                        Withdraw to M-Pesa
+                    </button>
+                </div>
+            </div>
+
+            <!-- METRIC CARDS -->
+            <div class="grid grid-3 mb-6">
+                <div class="metric-card">
+                    <div class="metric-icon metric-icon-success">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <circle cx="12" cy="12" r="9"/>
+                            <path stroke-linecap="round" d="M14.5 9.5h-4a1.5 1.5 0 100 3h3a1.5 1.5 0 110 3h-4M12 7v10"/>
+                        </svg>
+                    </div>
+                    <div class="metric-label">Total Earnings</div>
+                    <div class="metric-value" id="totalEarnings">KSh 0</div>
+                    <div class="metric-trend">All time</div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-icon metric-icon-warning">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <circle cx="12" cy="12" r="9"/>
+                            <path stroke-linecap="round" d="M12 7v5l3 2"/>
+                        </svg>
+                    </div>
+                    <div class="metric-label">Pending Earnings</div>
+                    <div class="metric-value" id="pendingEarnings">KSh 0</div>
+                    <div class="metric-trend" id="pendingCount">0 bookings pending</div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-icon metric-icon-purple">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" d="M12 5v14M19 12l-7 7-7-7"/>
+                        </svg>
+                    </div>
+                    <div class="metric-label">Total Withdrawn</div>
+                    <div class="metric-value" id="totalWithdrawn">KSh 0</div>
+                    <div class="metric-trend">All time</div>
+                </div>
+            </div>
+
+            <!-- WITHDRAWAL FORM -->
+            <div class="withdraw-card mb-6" id="withdrawSection">
+                <div class="withdraw-card-title">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <rect x="5" y="2" width="14" height="20" rx="2"/>
+                        <path d="M12 18h.01"/>
+                    </svg>
+                    Withdraw Funds
+                </div>
+                <div class="withdraw-card-subtitle">Transfer your available balance to your registered M-Pesa number</div>
+
+                <div class="withdraw-summary">
+                    <div class="withdraw-summary-item">
+                        <div class="withdraw-summary-label">Available</div>
+                        <div class="withdraw-summary-value" id="withdrawAvailable">KSh 0</div>
+                    </div>
+                    <div class="withdraw-summary-item">
+                        <div class="withdraw-summary-label">Net Amount to Receive</div>
+                        <div class="withdraw-summary-value green" id="netAmount">KSh 0</div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Withdrawal Amount (KSh)</label>
+                    <input type="number" class="form-input" id="withdrawAmount" placeholder="Enter amount" min="100">
+                    <div class="form-hint">Minimum withdrawal: KSh 100. M-Pesa withdrawal fee: KSh 50</div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Registered M-Pesa Number</label>
+                    <input type="tel" class="form-input" id="withdrawPhone" placeholder="+254712345678" disabled>
+                    <div class="form-hint">This is the number registered on your account</div>
+                </div>
+
+                <button class="btn btn-success btn-block btn-lg" id="withdrawBtn" disabled>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                        <path stroke-linecap="round" d="M5 13l4 4L19 7"/>
+                    </svg>
+                    Request Withdrawal
+                </button>
+            </div>
+
+            <!-- TRANSACTION HISTORY -->
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <div class="card-title">Transaction History</div>
+                        <div class="card-subtitle">Your recent earnings and withdrawals</div>
+                    </div>
+                </div>
+
+                <div class="tabs">
+                    <button class="tab active" data-filter="all">All</button>
+                    <button class="tab" data-filter="earnings">Earnings</button>
+                    <button class="tab" data-filter="withdrawals">Withdrawals</button>
+                </div>
+
+                <div id="transactions">
+                    <div class="empty-state">
+                        <div class="empty-state-title">Loading...</div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+</div>
+
+<div class="sidebar-overlay" onclick="UI.toggleSidebar()"></div>
+
+<script src="/assets/js/config.js"></script>
+<script src="/assets/js/auth.js"></script>
+<script src="/assets/js/utils.js"></script>
+<script src="/assets/js/api.js"></script>
+<script src="/assets/js/ui.js"></script>
+<script src="/assets/js/sidebar.js"></script>
+<script>
+    const user = Auth.requireAuth('owner');
+    if (!user) throw new Error('Not authorized');
+
+    Sidebar.render();
+    UI.initShell();
+
+    let transactions = [];
+    let currentFilter = 'all';
+    let ownerData = null;
+
+    const COMMISSION_RATE = 0.10;   // 10% platform commission
+    const WITHDRAWAL_FEE = 50;      // KSh 50
+
+    async function init() {
+        try {
+            // Fetch owner info from /api/auth/me
+            const meData = await Api.getMe();
+            ownerData = meData.user;
+
+            // Fetch bookings to compute earnings
+            const bookingsData = await Api.getOwnerBookings();
+            const bookings = bookingsData.bookings || [];
+
+            computeEarnings(bookings);
+            buildTransactions(bookings);
+            renderTransactions();
+
+            // Prefill phone
+            document.getElementById('withdrawPhone').value = user.phone || '';
+
+            // Wire withdrawal input
+            document.getElementById('withdrawAmount').addEventListener('input', updateWithdrawButton);
+
+            // Load chat badge
+            try {
+                const unread = await Api.getUnreadCount();
+                if (unread.unread > 0) {
+                    const badge = document.getElementById('chatBadge');
+                    badge.textContent = unread.unread;
+                    badge.style.display = 'flex';
+                }
+            } catch (e) { /* silent */ }
+
+        } catch (err) {
+            console.error('Failed to load earnings:', err);
+            document.getElementById('transactions').innerHTML =
+                '<div class="alert alert-danger">Failed to load earnings: ' +
+                Utils.escapeHtml(err.message) + '</div>';
+        }
+    }
+
+    function computeEarnings(bookings) {
+        // Total earnings: sum of owner's share (90%) of paid + delivered + rented + returned + completed bookings
+        const earningStatuses = ['paid', 'delivered', 'rented', 'returned', 'completed'];
+        const earningBookings = bookings.filter(function (b) {
+            return earningStatuses.indexOf(b.status) !== -1;
+        });
+
+        const totalEarnings = earningBookings.reduce(function (sum, b) {
+            return sum + (Number(b.total_amount) * (1 - COMMISSION_RATE));
+        }, 0);
+
+        // Pending earnings: sum of owner's share of confirmed bookings (paid but not fully cleared)
+        // In this simplified model, confirmed bookings are pending earnings
+        const pendingBookings = bookings.filter(function (b) {
+            return b.status === 'confirmed';
+        });
+
+        const pendingEarnings = pendingBookings.reduce(function (sum, b) {
+            return sum + (Number(b.total_amount) * (1 - COMMISSION_RATE));
+        }, 0);
+
+        // Total withdrawn: not tracked in the simplified schema — set to 0
+        const totalWithdrawn = 0;
+
+        // Available = total earnings - total withdrawn
+        const availableBalance = totalEarnings - totalWithdrawn;
+
+        document.getElementById('totalEarnings').textContent = Utils.formatCurrency(totalEarnings);
+        document.getElementById('pendingEarnings').textContent = Utils.formatCurrency(pendingEarnings);
+        document.getElementById('pendingCount').textContent = pendingBookings.length + ' booking' + (pendingBookings.length === 1 ? '' : 's') + ' pending';
+        document.getElementById('totalWithdrawn').textContent = Utils.formatCurrency(totalWithdrawn);
+        document.getElementById('availableBalance').textContent = Utils.formatCurrency(availableBalance);
+        document.getElementById('withdrawAvailable').textContent = Utils.formatCurrency(availableBalance);
+
+        // Store for withdrawal logic
+        window.availableBalance = availableBalance;
+    }
+
+    function buildTransactions(bookings) {
+        // Earnings transactions
+        const earningStatuses = ['paid', 'delivered', 'rented', 'returned', 'completed'];
+        const earnings = bookings
+            .filter(function (b) {
+                return earningStatuses.indexOf(b.status) !== -1;
+            })
+            .map(function (b) {
+                return {
+                    type: 'earning',
+                    date: b.updated_at || b.created_at,
+                    title: 'Booking ' + b.booking_ref,
+                    subtitle: 'From ' + (b.customer_name || 'customer'),
+                    amount: Number(b.total_amount) * (1 - COMMISSION_RATE),
+                    status: b.status,
+                    reference: b.mpesa_receipt || b.booking_ref
+                };
+            });
+
+        // Withdrawals (none in simplified schema, but here for future)
+        const withdrawals = [];
+
+        transactions = earnings.concat(withdrawals);
+        transactions.sort(function (a, b) {
+            return new Date(b.date) - new Date(a.date);
+        });
+    }
+
+    function renderTransactions() {
+        const container = document.getElementById('transactions');
+
+        let filtered = transactions;
+        if (currentFilter === 'earnings') {
+            filtered = transactions.filter(function (t) { return t.type === 'earning'; });
+        } else if (currentFilter === 'withdrawals') {
+            filtered = transactions.filter(function (t) { return t.type === 'withdrawal'; });
+        }
+
+        if (filtered.length === 0) {
+            container.innerHTML = '<div class="empty-state">' +
+                '<div class="empty-state-title">No transactions yet</div>' +
+                '<div class="empty-state-message">Your earnings and withdrawals will appear here.</div>' +
+            '</div>';
+            return;
+        }
+
+        container.innerHTML = filtered.map(renderTransaction).join('');
+    }
+
+    function renderTransaction(t) {
+        const isIncome = t.type === 'earning';
+
+        const iconHtml = isIncome
+            ? '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M19 12l-7 7-7-7"/></svg>'
+            : '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19V5M5 12l7-7 7 7"/></svg>';
+
+        const amountClass = isIncome ? 'positive' : 'negative';
+        const amountPrefix = isIncome ? '+' : '-';
+
+        return '<div class="tx-row">' +
+            '<div class="tx-info">' +
+                '<div class="tx-icon ' + (isIncome ? 'income' : 'withdraw') + '">' + iconHtml + '</div>' +
+                '<div class="tx-details">' +
+                    '<div class="tx-title">' + Utils.escapeHtml(t.title) + '</div>' +
+                    '<div class="tx-meta">' + Utils.escapeHtml(t.subtitle) + '</div>' +
+                '</div>' +
+            '</div>' +
+            '<div class="tx-amount">' +
+                '<div class="tx-amount-value ' + amountClass + '">' +
+                    amountPrefix + Utils.formatCurrency(t.amount) +
+                '</div>' +
+                '<div class="tx-amount-date">' + Utils.formatDate(t.date) + '</div>' +
+            '</div>' +
+        '</div>';
+    }
+
+    function updateWithdrawButton() {
+        const input = document.getElementById('withdrawAmount');
+        const btn = document.getElementById('withdrawBtn');
+        const amount = Number(input.value) || 0;
+        const available = window.availableBalance || 0;
+
+        // Update net amount display
+        const netAmount = amount > 0 ? Math.max(0, amount - WITHDRAWAL_FEE) : 0;
+        document.getElementById('netAmount').textContent = Utils.formatCurrency(netAmount);
+
+        // Validate
+        if (amount < 100) {
+            btn.disabled = true;
+            return;
+        }
+        if (amount > available) {
+            btn.disabled = true;
+            return;
+        }
+        if (!user.phone) {
+            btn.disabled = true;
+            return;
+        }
+        btn.disabled = false;
+    }
+
+    function scrollToWithdraw() {
+        document.getElementById('withdrawSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        setTimeout(function () {
+            document.getElementById('withdrawAmount').focus();
+        }, 400);
+    }
+
+    document.querySelectorAll('.tab').forEach(function (tab) {
+        tab.addEventListener('click', function () {
+            document.querySelectorAll('.tab').forEach(function (t) { t.classList.remove('active'); });
+            tab.classList.add('active');
+            currentFilter = tab.dataset.filter;
+            renderTransactions();
+        });
+    });
+
+    document.getElementById('withdrawBtn').addEventListener('click', function () {
+        const amount = Number(document.getElementById('withdrawAmount').value);
+        const available = window.availableBalance || 0;
+
+        if (amount < 100) {
+            UI.toast('Minimum withdrawal is KSh 100', 'warning');
+            return;
+        }
+        if (amount > available) {
+            UI.toast('Amount exceeds your available balance', 'warning');
+            return;
+        }
+
+        // In production, this would call an API to initiate an M-Pesa B2C payout.
+        UI.toast('Withdrawal requested. You will receive ' + Utils.formatCurrency(amount - WITHDRAWAL_FEE) + ' via M-Pesa shortly.', 'success');
+        document.getElementById('withdrawAmount').value = '';
+        updateWithdrawButton();
+    });
+
+    document.getElementById('topSearch').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            const q = e.target.value.trim();
+            if (q) window.location.href = '/owner/bookings.html?search=' + encodeURIComponent(q);
+        }
+    });
+
+    init();
+</script>
+
+    <script defer src="/assets/js/motion.js"></script>
+</body>
+</html>

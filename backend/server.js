@@ -14,7 +14,8 @@ const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
         origin: process.env.CLIENT_URL || '*',
-        methods: ['GET', 'POST']
+        methods: ['GET', 'POST'],
+        credentials: true
     }
 });
 
@@ -34,7 +35,8 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Serve uploaded files statically
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-app.use(express.static(path.join(__dirname, 'public')));
+// Serve the frontend pages and their assets from the project frontend folder.
+app.use(express.static(path.join(__dirname, '../frontend')));
 
 // Make io available to routes
 app.set('io', io);
@@ -69,11 +71,17 @@ app.use('/api/payments', paymentRoutes);
 const chatRoutes = require('./routes/chat');
 app.use('/api/chat', chatRoutes);
 
+const reviewRoutes = require('./routes/review');
+app.use('/api/reviews', reviewRoutes);
+
+const adminRoutes = require('./routes/admin');
+app.use('/api/admin', adminRoutes);
+
 // Health check
-app.get('/', (req, res) => {
+app.get('/api/health', (req, res) => {
     res.json({
         status: 'success',
-        message: 'EventRent Kenya API is running',
+        message: 'EventEquip Kenya API is running',
         version: '1.0.0',
         timestamp: new Date().toISOString()
     });
@@ -89,10 +97,10 @@ app.get('/api/test-db', async (req, res) => {
             user_count: rows[0].user_count
         });
     } catch (err) {
+        console.error('Database check failed:', err);
         res.status(500).json({
             status: 'error',
-            message: 'Database query failed',
-            error: err.message
+            message: 'We could not complete the database check right now.'
         });
     }
 });
@@ -105,16 +113,19 @@ app.get('/api/test-db', async (req, res) => {
 app.use((req, res) => {
     res.status(404).json({
         status: 'error',
-        message: `Route ${req.method} ${req.url} not found`
+        message: 'The requested service could not be found.'
     });
 });
 
 // Global error handler
 app.use((err, req, res, next) => {
     console.error('Server error:', err);
-    res.status(err.status || 500).json({
+    const status = err.status || 500;
+    res.status(status).json({
         status: 'error',
-        message: err.message || 'Internal server error'
+        message: status >= 500
+            ? 'We could not complete your request right now. Please try again shortly.'
+            : (err.expose ? err.message : 'We could not process your request.')
     });
 });
 

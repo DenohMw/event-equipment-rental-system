@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" sizes="512x512" href="/assets/images/icons/favicon.png">
+    <link rel="shortcut icon" type="image/png" href="/assets/images/icons/favicon.png">
+    <link rel="apple-touch-icon" sizes="512x512" href="/assets/images/icons/favicon.png">
+    <meta name="theme-color" content="#1E3A8A">
+    <title>Dashboard - EventEquip Kenya</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/assets/css/base.css">
+    <link rel="stylesheet" href="/assets/css/layout.css">
+    <link rel="stylesheet" href="/assets/css/components.css">
+    <link rel="stylesheet" href="/assets/css/pages.css">
+    <style>
+        .welcome-banner {
+            background: linear-gradient(135deg, #1E3A8A 0%, #1e40af 100%);
+            color: white;
+            padding: 32px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 24px;
+            position: relative;
+            overflow: hidden;
+        }
+        .welcome-banner::before {
+            content: '';
+            position: absolute;
+            top: -60%;
+            right: -10%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(249, 115, 22, 0.18), transparent 70%);
+            pointer-events: none;
+        }
+        .welcome-content {
+            position: relative;
+            z-index: 1;
+        }
+        .welcome-content h1 {
+            color: white;
+            font-size: 24px;
+            margin-bottom: 6px;
+            font-weight: 700;
+        }
+        .welcome-content p {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.85);
+            margin-bottom: 20px;
+        }
+        .welcome-visual {
+            position: relative;
+            z-index: 1;
+            opacity: 0.35;
+        }
+        .welcome-visual svg {
+            width: 90px;
+            height: 90px;
+        }
+        .metric-icon svg {
+            width: 20px;
+            height: 20px;
+            stroke-width: 2.25;
+        }
+        .action-card {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 20px;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            text-decoration: none;
+            color: inherit;
+            transition: all 0.2s ease;
+        }
+        .action-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(15, 23, 42, 0.07);
+            border-color: transparent;
+            text-decoration: none;
+            color: inherit;
+        }
+        .action-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #fed7aa, #fdba74);
+            color: #ea580c;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .action-icon svg {
+            width: 22px;
+            height: 22px;
+            stroke-width: 2;
+        }
+        .action-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #0F172A;
+            margin-bottom: 2px;
+        }
+        .action-desc {
+            font-size: 12.5px;
+            color: #64748B;
+        }
+        .booking-row-equipment {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .booking-thumb {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            background: #F8FAFC;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+        .booking-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .booking-thumb svg {
+            width: 18px;
+            height: 18px;
+            color: #64748B;
+            stroke-width: 1.75;
+        }
+        .dashboard-charts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; margin: 0 0 28px; }
+        .dashboard-chart-card { min-width: 0; padding: 22px; background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; }
+        .dashboard-chart-card h3 { margin: 0 0 4px; color: #0f172a; font-size: 15px; }
+        .dashboard-chart-card p { margin: 0 0 20px; color: #64748b; font-size: 12px; }
+        .dashboard-chart-bars { display: grid; gap: 14px; }
+        .dashboard-chart-row { display: grid; grid-template-columns: minmax(74px, 0.75fr) minmax(40px, 2fr) minmax(64px, auto); align-items: center; gap: 10px; }
+        .dashboard-chart-label { overflow: hidden; color: #475569; font-size: 12px; text-overflow: ellipsis; text-transform: capitalize; white-space: nowrap; }
+        .dashboard-chart-track { height: 9px; overflow: hidden; border-radius: 9px; background: #f1f5f9; }
+        .dashboard-chart-fill { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #1e3a8a, #3b82f6); }
+        .dashboard-chart-value { color: #0f172a; font-size: 12px; text-align: right; white-space: nowrap; }
+        .dashboard-chart-empty { padding: 20px 4px; color: #64748b; font-size: 13px; text-align: center; }
+        @media (max-width: 768px) {
+            .welcome-visual { display: none; }
+            .welcome-banner { padding: 24px; }
+            .dashboard-charts { grid-template-columns: 1fr; gap: 14px; }
+            .dashboard-chart-card { padding: 18px; }
+        }
+    </style>
+    <link rel="stylesheet" href="/assets/css/polish.css">
+</head>
+<body>
+
+<div class="app-shell">
+
+    <aside class="sidebar"></aside>
+
+    <main class="app-main">
+
+        <!-- TOPBAR -->
+        <div class="topbar">
+            <div class="topbar-left">
+                <button class="topbar-toggle" onclick="UI.toggleSidebar()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" d="M4 6h16M4 12h16M4 18h16"/>
+                    </svg>
+                </button>
+                <div class="topbar-search">
+                    <svg class="topbar-search-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="7"/>
+                        <path stroke-linecap="round" d="M21 21l-4.35-4.35"/>
+                    </svg>
+                    <input type="text" id="topSearch" placeholder="Search bookings, equipment...">
+                </div>
+            </div>
+            <div class="topbar-right">
+                <button class="topbar-icon-btn" onclick="window.location.href='/owner/chat.html'">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M21 12a8 8 0 11-3.5 6.6L3 21l2.4-6.5A8 8 0 0121 12z"/>
+                    </svg>
+                    <span class="topbar-icon-badge" id="chatBadge" style="display: none;">0</span>
+                </button>
+                <button class="topbar-icon-btn" data-action="logout" title="Logout">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                    </svg>
+                </button>
+                <div class="topbar-user">
+                    <div class="topbar-user-avatar" data-user="initials">?</div>
+                    <div class="topbar-user-meta">
+                        <div class="topbar-user-name" data-user="name">Loading...</div>
+                        <div class="topbar-user-role" data-user="role"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PAGE CONTENT -->
+        <div class="app-content">
+
+            <div class="welcome-banner">
+                <div class="welcome-content">
+                    <h1>Welcome, <span data-user="first-name">there</span></h1>
+                    <p>Here is what is happening with your business today.</p>
+                    <a href="/owner/add-equipment.html" class="btn btn-primary">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                            <path stroke-linecap="round" d="M12 5v14M5 12h14"/>
+                        </svg>
+                        Add Equipment
+                    </a>
+                </div>
+                <div class="welcome-visual">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.25">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 3l9 7-2 11H5L3 10l9-7z"/>
+                    </svg>
+                </div>
+            </div>
+
+            <!-- METRIC CARDS -->
+            <div class="grid grid-4 mb-6">
+                <div class="metric-card">
+                    <div class="metric-icon metric-icon-navy">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path d="M3 7l9-4 9 4-9 4-9-4z"/>
+                            <path d="M3 12l9 4 9-4M3 17l9 4 9-4"/>
+                        </svg>
+                    </div>
+                    <div class="metric-label">My Equipment</div>
+                    <div class="metric-value" id="metricEquipment">0</div>
+                    <div class="metric-trend neutral" id="metricApproved">0 approved</div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-icon metric-icon-warning">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <rect x="3" y="4" width="18" height="18" rx="2"/>
+                            <path d="M16 2v4M8 2v4M3 10h18"/>
+                        </svg>
+                    </div>
+                    <div class="metric-label">Pending Bookings</div>
+                    <div class="metric-value" id="metricPending">0</div>
+                    <div class="metric-trend neutral">Awaiting your confirmation</div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-icon metric-icon-success">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <circle cx="12" cy="12" r="9"/>
+                            <path stroke-linecap="round" d="M14.5 9.5h-4a1.5 1.5 0 100 3h3a1.5 1.5 0 110 3h-4M12 7v10"/>
+                        </svg>
+                    </div>
+                    <div class="metric-label">Total Earnings</div>
+                    <div class="metric-value" id="metricEarnings">KSh 0</div>
+                    <div class="metric-trend up">All time</div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-icon metric-icon-purple">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 17l6-6 4 4 8-8"/>
+                            <path d="M14 7h7v7"/>
+                        </svg>
+                    </div>
+                    <div class="metric-label">Total Bookings</div>
+                    <div class="metric-value" id="metricBookings">0</div>
+                    <div class="metric-trend neutral">All time</div>
+                </div>
+            </div>
+
+            <section class="dashboard-charts" aria-label="Rental performance">
+                <article class="dashboard-chart-card"><h3>Owner earnings</h3><p>Estimated earnings by booking month, after the 10% service fee</p><div id="ownerEarningsTrend"></div></article>
+                <article class="dashboard-chart-card"><h3>Booking status</h3><p>Requests and rentals across your listings</p><div id="ownerBookingStatus"></div></article>
+            </section>
+
+            <!-- QUICK ACTIONS -->
+            <h3 class="mb-4" style="font-size: 16px;">Quick Actions</h3>
+            <div class="grid grid-3 mb-8">
+                <a href="/owner/add-equipment.html" class="action-card">
+                    <div class="action-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" d="M12 5v14M5 12h14"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="action-title">Add Equipment</div>
+                        <div class="action-desc">List new equipment for rent</div>
+                    </div>
+                </a>
+
+                <a href="/owner/equipment.html" class="action-card">
+                    <div class="action-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path d="M3 7l9-4 9 4-9 4-9-4z"/>
+                            <path d="M3 12l9 4 9-4M3 17l9 4 9-4"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="action-title">My Equipment</div>
+                        <div class="action-desc">Manage your listings and prices</div>
+                    </div>
+                </a>
+
+                <a href="/owner/bookings.html" class="action-card">
+                    <div class="action-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <rect x="3" y="4" width="18" height="18" rx="2"/>
+                            <path d="M16 2v4M8 2v4M3 10h18"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="action-title">View Bookings</div>
+                        <div class="action-desc">Manage incoming rental requests</div>
+                    </div>
+                </a>
+            </div>
+
+            <!-- RECENT BOOKINGS -->
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <div class="card-title">Recent Bookings</div>
+                        <div class="card-subtitle">Latest rental requests from customers</div>
+                    </div>
+                    <a href="/owner/bookings.html" style="font-size: 13px; font-weight: 600;">View All</a>
+                </div>
+                <div id="recentBookings">
+                    <div class="empty-state">
+                        <div class="empty-state-title">Loading...</div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+</div>
+
+<div class="sidebar-overlay" onclick="UI.toggleSidebar()"></div>
+
+<script src="/assets/js/config.js"></script>
+<script src="/assets/js/auth.js"></script>
+<script src="/assets/js/utils.js"></script>
+<script src="/assets/js/api.js"></script>
+<script src="/assets/js/ui.js"></script>
+<script src="/assets/js/sidebar.js"></script>
+<script src="/assets/js/dashboard-charts.js"></script>
+<script>
+    const user = Auth.requireAuth('owner');
+    if (!user) throw new Error('Not authorized');
+
+    Sidebar.render();
+    UI.initShell();
+    Sidebar.updateUnreadBadge();
+
+    async function loadDashboard() {
+        try {
+            const [equipmentData, bookingsData, unreadData] = await Promise.all([
+                Api.getMyEquipment(),
+                Api.getOwnerBookings(),
+                Api.getUnreadCount().catch(function () { return { unread: 0 }; })
+            ]);
+
+            const equipment = equipmentData.equipment || [];
+            const bookings = bookingsData.bookings || [];
+            const earningStatuses = ['paid', 'delivered', 'rented', 'returned', 'completed'];
+            DashboardCharts.renderBars('ownerEarningsTrend', DashboardCharts.lastSixMonths(bookings, function (booking) {
+                return earningStatuses.indexOf(booking.status) !== -1 ? Number(booking.total_amount || 0) * 0.9 : 0;
+            }), { label: 'Estimated owner earnings by month', currency: true });
+            DashboardCharts.renderBars('ownerBookingStatus', DashboardCharts.statusCounts(bookings), { label: 'Owner bookings by status' });
+
+            // Metrics
+            const approved = equipment.filter(function (e) { return e.is_approved; });
+
+            const pending = bookings.filter(function (b) {
+                return b.status === 'requested';
+            });
+
+            const earnings = bookings
+                .filter(function (b) {
+                    return ['paid', 'delivered', 'rented', 'returned', 'completed'].indexOf(b.status) !== -1;
+                })
+                .reduce(function (sum, b) {
+                    // Owner earns total minus 10% service fee
+                    const ownerEarning = Number(b.total_amount) * 0.9;
+                    return sum + ownerEarning;
+                }, 0);
+
+            document.getElementById('metricEquipment').textContent = equipment.length;
+            document.getElementById('metricApproved').textContent = approved.length + ' approved';
+            document.getElementById('metricPending').textContent = pending.length;
+            document.getElementById('metricEarnings').textContent = Utils.formatCurrency(earnings);
+            document.getElementById('metricBookings').textContent = bookings.length;
+
+            // Chat badge
+            if (unreadData.unread > 0) {
+                const badge = document.getElementById('chatBadge');
+                badge.textContent = unreadData.unread;
+                badge.style.display = 'flex';
+            }
+
+            // Recent bookings
+            renderRecentBookings(bookings.slice(0, 5));
+
+        } catch (err) {
+            console.error('Dashboard load error:', err);
+            document.getElementById('recentBookings').innerHTML =
+                '<div class="alert alert-danger" style="margin: 24px;">' +
+                    Utils.escapeHtml(err.message) +
+                '</div>';
+        }
+    }
+
+    function renderRecentBookings(bookings) {
+        const container = document.getElementById('recentBookings');
+
+        if (bookings.length === 0) {
+            container.innerHTML =
+                '<div class="empty-state">' +
+                    '<div class="empty-state-title">No bookings yet</div>' +
+                    '<div class="empty-state-message">Your rental requests will appear here.</div>' +
+                '</div>';
+            return;
+        }
+
+        const rows = bookings.map(function (b) {
+            const imageUrl = b.equipment_image || '';
+            const imageHtml = imageUrl
+                ? '<img src="' + Utils.escapeHtml(imageUrl) + '" alt="" onerror="this.style.display=\'none\'">'
+                : '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3l9 7-2 11H5L3 10l9-7z"/></svg>';
+
+            return '<tr>' +
+                '<td><strong>' + Utils.escapeHtml(b.booking_ref) + '</strong></td>' +
+                '<td>' + Utils.escapeHtml(b.customer_name || '-') + '</td>' +
+                '<td>' +
+                    '<div class="booking-row-equipment">' +
+                        '<div class="booking-thumb">' + imageHtml + '</div>' +
+                        '<span>' + Utils.escapeHtml(b.equipment_name || '-') + '</span>' +
+                    '</div>' +
+                '</td>' +
+                '<td>' + Utils.formatDate(b.start_date) + ' to ' + Utils.formatDate(b.end_date) + '</td>' +
+                '<td><strong>' + Utils.formatCurrency(b.total_amount) + '</strong></td>' +
+                '<td>' + Utils.statusBadge(b.status) + '</td>' +
+            '</tr>';
+        }).join('');
+
+        container.innerHTML =
+            '<div class="table-wrapper">' +
+                '<table class="table">' +
+                    '<thead>' +
+                        '<tr>' +
+                            '<th>Booking Ref</th>' +
+                            '<th>Customer</th>' +
+                            '<th>Equipment</th>' +
+                            '<th>Dates</th>' +
+                            '<th>Amount</th>' +
+                            '<th>Status</th>' +
+                        '</tr>' +
+                    '</thead>' +
+                    '<tbody>' + rows + '</tbody>' +
+                '</table>' +
+            '</div>';
+    }
+
+    document.getElementById('topSearch').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            const q = e.target.value.trim();
+            if (q) window.location.href = '/owner/bookings.html?search=' + encodeURIComponent(q);
+        }
+    });
+
+    loadDashboard();
+</script>
+
+    <script defer src="/assets/js/motion.js"></script>
+</body>
+</html>

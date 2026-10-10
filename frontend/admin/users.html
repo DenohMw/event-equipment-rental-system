@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" sizes="512x512" href="/assets/images/icons/favicon.png">
+    <link rel="shortcut icon" type="image/png" href="/assets/images/icons/favicon.png">
+    <link rel="apple-touch-icon" sizes="512x512" href="/assets/images/icons/favicon.png">
+    <meta name="theme-color" content="#1E3A8A">
+    <title>Users - EventEquip Kenya Admin</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/assets/css/base.css">
+    <link rel="stylesheet" href="/assets/css/layout.css">
+    <link rel="stylesheet" href="/assets/css/components.css">
+    <link rel="stylesheet" href="/assets/css/pages.css">
+    <style>
+        .filter-bar {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .filter-bar .form-input {
+            flex: 1;
+            min-width: 200px;
+            padding: 9px 14px;
+        }
+        .role-chips {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .role-chip {
+            padding: 6px 14px;
+            border-radius: 9999px;
+            font-size: 12.5px;
+            font-weight: 600;
+            color: #64748B;
+            background: #F1F5F9;
+            border: none;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            font-family: inherit;
+        }
+        .role-chip:hover {
+            background: #e2e8f0;
+            color: #0F172A;
+        }
+        .role-chip.active {
+            background: #1E3A8A;
+            color: white;
+        }
+
+        .user-cell {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .user-avatar-sm {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 12.5px;
+            color: white;
+            flex-shrink: 0;
+        }
+        .user-avatar-sm.customer { background: #1E3A8A; }
+        .user-avatar-sm.owner { background: #10B981; }
+        .user-avatar-sm.admin { background: #8B5CF6; }
+
+        .user-cell-name {
+            font-weight: 600;
+            color: #0F172A;
+            font-size: 13.5px;
+            margin-bottom: 2px;
+        }
+        .user-cell-email {
+            font-size: 11.5px;
+            color: #64748B;
+        }
+
+        .loading-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #64748B;
+        }
+    </style>
+    <link rel="stylesheet" href="/assets/css/polish.css">
+</head>
+<body>
+
+<div class="app-shell">
+    <aside class="sidebar"></aside>
+
+    <main class="app-main">
+        <div class="topbar">
+            <div class="topbar-left">
+                <button class="topbar-toggle" onclick="UI.toggleSidebar()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" d="M4 6h16M4 12h16M4 18h16"/>
+                    </svg>
+                </button>
+                <div class="topbar-search">
+                    <svg class="topbar-search-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="7"/>
+                        <path stroke-linecap="round" d="M21 21l-4.35-4.35"/>
+                    </svg>
+                    <input type="text" id="topSearch" placeholder="Search users...">
+                </div>
+            </div>
+            <div class="topbar-right">
+                <button class="topbar-icon-btn" data-action="logout" title="Logout">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                    </svg>
+                </button>
+                <div class="topbar-user">
+                    <div class="topbar-user-avatar" data-user="initials">?</div>
+                    <div class="topbar-user-meta">
+                        <div class="topbar-user-name" data-user="name">Loading...</div>
+                        <div class="topbar-user-role" data-user="role"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="app-content">
+            <div class="page-header">
+                <div class="page-header-row">
+                    <div>
+                        <h1 class="page-title">Users</h1>
+                        <p class="page-subtitle">Manage all customers, owners, and admins</p>
+                    </div>
+                    <div class="results-count" id="resultsCount" style="font-size: 13.5px; color: #64748B;"></div>
+                </div>
+            </div>
+
+            <div class="filter-bar">
+                <input type="text" class="form-input" id="searchInput" placeholder="Search by name, email, or phone...">
+                <div class="role-chips">
+                    <button class="role-chip active" data-role="">All</button>
+                    <button class="role-chip" data-role="customer">Customers</button>
+                    <button class="role-chip" data-role="owner">Owners</button>
+                    <button class="role-chip" data-role="admin">Admins</button>
+                </div>
+            </div>
+
+            <div id="usersTable">
+                <div class="loading-state">
+                    <div class="spinner spinner-dark" style="width: 32px; height: 32px; border-width: 3px; display: inline-block;"></div>
+                    <p style="margin-top: 16px;">Loading users...</p>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<div class="sidebar-overlay" onclick="UI.toggleSidebar()"></div>
+
+<script src="/assets/js/config.js"></script>
+<script src="/assets/js/auth.js"></script>
+<script src="/assets/js/utils.js"></script>
+<script src="/assets/js/api.js"></script>
+<script src="/assets/js/ui.js"></script>
+<script src="/assets/js/sidebar.js"></script>
+<script>
+    const user = Auth.requireAuth('admin');
+    if (!user) throw new Error('Not authorized');
+
+    Sidebar.render();
+    UI.initShell();
+
+    let allUsers = [];
+    let filterRole = '';
+    let searchQuery = '';
+
+    async function init() {
+        try {
+            const data = await Api.adminUsers();
+            allUsers = data.users || [];
+            renderUsers();
+        } catch (err) {
+            console.error('Failed to load users:', err);
+            document.getElementById('usersTable').innerHTML =
+                '<div class="alert alert-danger">Failed to load users: ' +
+                Utils.escapeHtml(err.message) + '</div>';
+        }
+    }
+
+    function renderUsers() {
+        const container = document.getElementById('usersTable');
+        let filtered = allUsers;
+
+        if (filterRole) {
+            filtered = filtered.filter(function (u) { return u.role === filterRole; });
+        }
+
+        if (searchQuery) {
+            const q = searchQuery.toLowerCase();
+            filtered = filtered.filter(function (u) {
+                return (u.full_name || '').toLowerCase().indexOf(q) !== -1 ||
+                       (u.email || '').toLowerCase().indexOf(q) !== -1 ||
+                       (u.phone || '').toLowerCase().indexOf(q) !== -1 ||
+                       (u.business_name || '').toLowerCase().indexOf(q) !== -1;
+            });
+        }
+
+        document.getElementById('resultsCount').innerHTML =
+            'Showing <strong>' + filtered.length + '</strong> of <strong>' + allUsers.length + '</strong> users';
+
+        if (filtered.length === 0) {
+            container.innerHTML = '<div class="card">' +
+                '<div class="empty-state">' +
+                    '<div class="empty-state-title">No users found</div>' +
+                    '<div class="empty-state-message">Try adjusting your filters.</div>' +
+                '</div>' +
+            '</div>';
+            return;
+        }
+
+        const rows = filtered.map(renderUserRow).join('');
+
+        container.innerHTML =
+            '<div class="table-wrapper">' +
+                '<table class="table">' +
+                    '<thead>' +
+                        '<tr>' +
+                            '<th>User</th>' +
+                            '<th>Role</th>' +
+                            '<th>Phone</th>' +
+                            '<th>Status</th>' +
+                            '<th>Joined</th>' +
+                            '<th style="text-align: right;">Actions</th>' +
+                        '</tr>' +
+                    '</thead>' +
+                    '<tbody>' + rows + '</tbody>' +
+                '</table>' +
+            '</div>';
+
+        wireActions();
+    }
+
+    function renderUserRow(u) {
+        const initials = Utils.initials(u.full_name);
+        const roleLabel = u.role.charAt(0).toUpperCase() + u.role.slice(1);
+
+        const statusBadge = u.is_active
+            ? '<span class="badge badge-success">Active</span>'
+            : '<span class="badge badge-danger">Inactive</span>';
+
+        // Only owners have a business_name and verification
+        let roleDetail = '';
+        if (u.role === 'owner' && u.business_name) {
+            roleDetail = '<div style="font-size: 11.5px; color: #64748B; margin-top: 2px;">' +
+                Utils.escapeHtml(u.business_name) + '</div>';
+        }
+
+        // Toggle button
+        const isSelf = u.user_id === user.user_id;
+        const toggleBtn = isSelf
+            ? '<button class="btn btn-outline btn-sm" disabled style="opacity: 0.5; cursor: not-allowed;">You</button>'
+            : (u.is_active
+                ? '<button class="btn btn-outline btn-sm" data-action="deactivate" data-user="' + u.user_id + '" style="color: #dc2626; border-color: #dc2626;">Deactivate</button>'
+                : '<button class="btn btn-outline btn-sm" data-action="activate" data-user="' + u.user_id + '">Activate</button>');
+
+        return '<tr>' +
+            '<td>' +
+                '<div class="user-cell">' +
+                    '<div class="user-avatar-sm ' + u.role + '">' + Utils.escapeHtml(initials) + '</div>' +
+                    '<div>' +
+                        '<div class="user-cell-name">' + Utils.escapeHtml(u.full_name) + '</div>' +
+                        '<div class="user-cell-email">' + Utils.escapeHtml(u.email) + '</div>' +
+                    '</div>' +
+                '</div>' +
+            '</td>' +
+            '<td>' +
+                '<div style="font-weight: 600; font-size: 13px;">' + roleLabel + '</div>' +
+                roleDetail +
+            '</td>' +
+            '<td>' + Utils.escapeHtml(u.phone || '-') + '</td>' +
+            '<td>' + statusBadge + '</td>' +
+            '<td>' + Utils.formatDate(u.created_at) + '</td>' +
+            '<td style="text-align: right;">' + toggleBtn + '</td>' +
+        '</tr>';
+    }
+
+    function wireActions() {
+        document.querySelectorAll('[data-action="deactivate"]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                toggleUser(this.dataset.user, false, this);
+            });
+        });
+
+        document.querySelectorAll('[data-action="activate"]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                toggleUser(this.dataset.user, true, this);
+            });
+        });
+    }
+
+    async function toggleUser(userId, activate, btn) {
+        const action = activate ? 'activate' : 'deactivate';
+        if (!confirm('Are you sure you want to ' + action + ' this user?')) return;
+
+        const restore = UI.buttonLoading(btn, 'Working...');
+
+        try {
+            await Api.adminToggleUser(userId, activate);
+            UI.toast('User ' + (activate ? 'activated' : 'deactivated'), 'success');
+
+            // Update local state
+            const u = allUsers.find(function (x) { return x.user_id === Number(userId); });
+            if (u) u.is_active = activate ? 1 : 0;
+            renderUsers();
+
+        } catch (err) {
+            UI.toast(err.message || 'Failed to update user', 'error');
+            restore();
+        }
+    }
+
+    document.querySelectorAll('.role-chip').forEach(function (chip) {
+        chip.addEventListener('click', function () {
+            document.querySelectorAll('.role-chip').forEach(function (c) { c.classList.remove('active'); });
+            chip.classList.add('active');
+            filterRole = chip.dataset.role;
+            renderUsers();
+        });
+    });
+
+    document.getElementById('searchInput').addEventListener('input', function (e) {
+        searchQuery = e.target.value.trim();
+        renderUsers();
+    });
+
+    document.getElementById('topSearch').addEventListener('input', function (e) {
+        searchQuery = e.target.value.trim();
+        document.getElementById('searchInput').value = e.target.value;
+        renderUsers();
+    });
+
+    init();
+</script>
+
+    <script defer src="/assets/js/motion.js"></script>
+</body>
+</html>

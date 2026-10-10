@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#102b50">
+    <link rel="icon" type="image/png" sizes="512x512" href="/assets/images/icons/favicon.png">
+    <link rel="shortcut icon" type="image/png" href="/assets/images/icons/favicon.png">
+    <link rel="apple-touch-icon" sizes="512x512" href="/assets/images/icons/favicon.png">
+    <title>Sign in | EventEquip Kenya</title>
+    <link rel="stylesheet" href="/assets/css/base.css">
+    <link rel="stylesheet" href="/assets/css/components.css">
+    <link rel="stylesheet" href="/assets/css/auth-pages.css">
+    <link rel="stylesheet" href="/assets/css/polish.css">
+</head>
+<body class="auth-page">
+    <div class="auth-layout">
+        <aside class="auth-visual" aria-label="EventEquip">
+            <a class="auth-brand" href="/">
+                <img src="/assets/images/icons/Icon.png" alt="">
+                <span><span class="auth-brand-name">EventEquip</span><span class="auth-brand-region">KENYA</span></span>
+            </a>
+            <div class="auth-visual-copy">
+                <p class="auth-eyebrow">Plan something memorable</p>
+                <h1>Everything your event needs, in one place.</h1>
+                <p>Find trusted event equipment, connect with local owners, and bring your next celebration together.</p>
+            </div>
+            <div class="auth-visual-footer">Book · Rent · Celebrate</div>
+        </aside>
+
+        <main class="auth-main">
+            <section class="auth-card" aria-labelledby="loginTitle">
+                <header class="auth-header">
+                    <span class="auth-kicker">Welcome back</span>
+                    <h1 class="auth-title" id="loginTitle">Sign in to EventEquip</h1>
+                    <p class="auth-subtitle">Use your account details to continue.</p>
+                </header>
+
+                <div id="activeSession" class="auth-session" style="display:none">
+                    <span id="activeSessionLabel"></span>
+                    <span class="auth-session-actions">
+                        <button type="button" class="auth-session-action" id="continueSessionBtn">Continue</button>
+                        <button type="button" class="auth-session-action" id="switchAccountBtn">Switch account</button>
+                    </span>
+                </div>
+                <div id="alertBox" class="auth-alert" style="display:none" role="status" aria-live="polite"></div>
+
+                <form id="loginForm" class="auth-form" novalidate>
+                    <div class="form-group">
+                        <label class="form-label" for="email">Email address</label>
+                        <input type="email" id="email" class="form-input" placeholder="you@example.com" required autocomplete="email">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="password">Password</label>
+                        <div class="password-field"><input type="password" id="password" class="form-input" placeholder="Enter your password" required autocomplete="current-password"><button type="button" class="password-toggle" data-password-toggle="password" aria-label="Show password" aria-pressed="false">Show</button></div>
+                    </div>
+                    <div class="auth-login-options">
+                        <div>
+                            <label class="auth-check" for="rememberMe">
+                                <input type="checkbox" id="rememberMe">
+                                <span>Remember me</span>
+                            </label>
+                            <small class="auth-remember-hint">Up to 7 days on this device.</small>
+                        </div>
+                        <a class="auth-link" href="/forgot-password.html">Forgot password?</a>
+                    </div>
+                    <button type="submit" class="auth-button auth-button-block" id="submitBtn">Sign in</button>
+                </form>
+
+                <div class="auth-saved" id="savedAccounts" style="display:none">
+                    <p class="auth-saved-heading">Remembered accounts</p>
+                    <div id="savedAccountsList"></div>
+                </div>
+                <p class="auth-footer">New to EventEquip? <a class="auth-link" href="/register.html">Create an account</a></p>
+            </section>
+        </main>
+    </div>
+
+    <script src="/assets/js/config.js"></script>
+    <script src="/assets/js/auth.js"></script>
+    <script src="/assets/js/utils.js"></script>
+    <script src="/assets/js/api.js"></script>
+    <script src="/assets/js/ui.js"></script>
+    <script src="/assets/js/password-toggle.js"></script>
+    <script>
+        const activeSessionUser = Storage.isAuthenticated() ? Storage.getUser() : null;
+        if (activeSessionUser) {
+            document.getElementById('activeSessionLabel').textContent =
+                'You’re already signed in as ' + activeSessionUser.full_name + '.';
+            document.getElementById('activeSession').style.display = 'flex';
+            document.getElementById('continueSessionBtn').addEventListener('click', function () {
+                const redirect = getSafeRedirect();
+                if (redirect && activeSessionUser.role === 'customer') window.location.href = redirect;
+                else Auth.redirectToDashboard(activeSessionUser.role);
+            });
+            document.getElementById('switchAccountBtn').addEventListener('click', function () {
+                Storage.clear();
+                document.getElementById('activeSession').style.display = 'none';
+                document.getElementById('email').value = '';
+                document.getElementById('password').value = '';
+                document.getElementById('email').focus();
+                showAlert('You’re signed out. Enter the other account details to continue.', 'info');
+            });
+        }
+
+        function showAlert(message, type) {
+            const alertBox = document.getElementById('alertBox');
+            alertBox.className = 'alert alert-' + type + ' auth-alert';
+            alertBox.textContent = message;
+            alertBox.style.display = 'flex';
+        }
+
+        function renderRememberedAccounts() {
+            const box = document.getElementById('savedAccounts');
+            const list = document.getElementById('savedAccountsList');
+            const accounts = Storage.getRememberedAccounts();
+            list.replaceChildren();
+            box.style.display = accounts.length ? 'block' : 'none';
+            accounts.forEach(function (account) {
+                const row = document.createElement('div');
+                row.className = 'auth-saved-row';
+                const meta = document.createElement('div');
+                meta.className = 'auth-saved-meta';
+                const name = document.createElement('div');
+                name.className = 'auth-saved-name';
+                name.textContent = account.user.full_name + ' · ' + account.user.role;
+                const email = document.createElement('div');
+                email.className = 'auth-saved-email';
+                email.textContent = account.user.email;
+                meta.append(name, email);
+
+                const actions = document.createElement('div');
+                actions.className = 'auth-saved-actions';
+                const continueButton = document.createElement('button');
+                continueButton.type = 'button';
+                continueButton.className = 'auth-saved-button';
+                continueButton.textContent = 'Continue';
+                continueButton.addEventListener('click', function () {
+                    const user = Storage.restoreRemembered(account.user.user_id);
+                    if (!user) return renderRememberedAccounts();
+                    const redirect = getSafeRedirect();
+                    if (redirect && user.role === 'customer') window.location.href = redirect;
+                    else Auth.redirectToDashboard(user.role);
+                });
+                const forgetButton = document.createElement('button');
+                forgetButton.type = 'button';
+                forgetButton.className = 'auth-saved-button';
+                forgetButton.textContent = 'Forget';
+                forgetButton.addEventListener('click', function () {
+                    Storage.forgetRemembered(account.user.user_id);
+                    renderRememberedAccounts();
+                });
+                actions.append(continueButton, forgetButton);
+                row.append(meta, actions);
+                list.appendChild(row);
+            });
+        }
+
+        function getSafeRedirect() {
+            const redirect = Utils.getQueryParam('redirect');
+            if (!redirect || redirect.charAt(0) !== '/' || redirect.indexOf('//') === 0) return null;
+            try {
+                const url = new URL(redirect, window.location.origin);
+                return url.origin === window.location.origin ? url.pathname + url.search + url.hash : null;
+            } catch (err) { return null; }
+        }
+
+        renderRememberedAccounts();
+
+        document.getElementById('loginForm').addEventListener('submit', async function (event) {
+            event.preventDefault();
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            const submitButton = document.getElementById('submitBtn');
+            if (!email || !password) return showAlert('Enter your email and password.', 'danger');
+            document.getElementById('alertBox').style.display = 'none';
+            const restore = UI.buttonLoading(submitButton, 'Signing in...');
+            try {
+                const result = await Api.login({ email, password });
+                Storage.save(result.token, result.user, document.getElementById('rememberMe').checked);
+                showAlert('Signed in. Redirecting...', 'success');
+                const redirect = getSafeRedirect();
+                setTimeout(function () {
+                    if (redirect) window.location.href = redirect;
+                    else Auth.redirectToDashboard(result.user.role);
+                }, 500);
+            } catch (err) {
+                showAlert(err.message || 'Sign in failed. Please try again.', 'danger');
+                restore();
+            }
+        });
+    </script>
+    <script defer src="/assets/js/motion.js"></script>
+</body>
+</html>

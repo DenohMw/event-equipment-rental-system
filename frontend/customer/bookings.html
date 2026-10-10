@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" sizes="512x512" href="/assets/images/icons/favicon.png">
+    <link rel="shortcut icon" type="image/png" href="/assets/images/icons/favicon.png">
+    <link rel="apple-touch-icon" sizes="512x512" href="/assets/images/icons/favicon.png">
+    <meta name="theme-color" content="#1E3A8A">
+    <title>My Bookings - EventEquip Kenya</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/assets/css/base.css">
+    <link rel="stylesheet" href="/assets/css/layout.css">
+    <link rel="stylesheet" href="/assets/css/components.css">
+    <link rel="stylesheet" href="/assets/css/pages.css">
+    <style>
+        .tabs {
+            display: flex;
+            gap: 4px;
+            border-bottom: 1px solid #e2e8f0;
+            margin-bottom: 24px;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+        .tabs::-webkit-scrollbar { display: none; }
+        .tab {
+            padding: 12px 20px;
+            font-size: 13.5px;
+            font-weight: 600;
+            color: #64748B;
+            border-bottom: 2px solid transparent;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: transparent;
+            border-top: none;
+            border-left: none;
+            border-right: none;
+            font-family: inherit;
+        }
+        .tab:hover { color: #0F172A; }
+        .tab.active {
+            color: #F97316;
+            border-bottom-color: #F97316;
+        }
+        .tab-count {
+            padding: 1px 8px;
+            background: #F1F5F9;
+            border-radius: 9999px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+        .tab.active .tab-count {
+            background: #fed7aa;
+            color: #ea580c;
+        }
+
+        .booking-list {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .booking-item {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.2s ease;
+        }
+        .booking-item:hover {
+            border-color: #cbd5e1;
+            box-shadow: 0 4px 6px rgba(15, 23, 42, 0.05);
+        }
+        .booking-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 16px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #e2e8f0;
+            margin-bottom: 16px;
+        }
+        .booking-ref {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: #64748B;
+            margin-bottom: 4px;
+        }
+        .booking-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #0F172A;
+            margin-bottom: 4px;
+        }
+        .booking-date {
+            font-size: 12.5px;
+            color: #64748B;
+        }
+        .booking-body {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .booking-thumb {
+            width: 72px;
+            height: 72px;
+            border-radius: 10px;
+            background: #F8FAFC;
+            overflow: hidden;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #94a3b8;
+        }
+        .booking-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .booking-thumb svg {
+            width: 30px;
+            height: 30px;
+            stroke-width: 1.5;
+        }
+        .booking-info {
+            flex: 1;
+            min-width: 0;
+        }
+        .booking-info-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 4px 0;
+            font-size: 13px;
+        }
+        .booking-info-label { color: #64748B; }
+        .booking-info-value {
+            font-weight: 600;
+            color: #0F172A;
+        }
+        .booking-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            padding-top: 16px;
+            border-top: 1px solid #e2e8f0;
+        }
+        .booking-actions .btn { flex: 0 0 auto; }
+
+        .tracking-panel {
+            margin: 0 0 16px;
+            padding: 18px;
+            border: 1px solid #dbe5f4;
+            border-radius: 12px;
+            background: linear-gradient(145deg, #f8fbff, #fff);
+            animation: tracker-open .28s ease-out both;
+        }
+        .tracking-panel[hidden] { display: none; }
+        .tracking-panel-header { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; margin-bottom: 16px; }
+        .tracking-panel-title { margin: 0 0 4px; color: #0f172a; font-size: 14px; font-weight: 750; }
+        .tracking-panel-copy,.tracking-updated { margin: 0; color: #64748b; font-size: 12px; line-height: 1.6; }
+        .tracking-updated { white-space: nowrap; }
+        .tracking-steps { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 0; margin: 16px 0; padding: 0; list-style: none; }
+        .tracking-step { position: relative; min-width: 0; padding: 0 6px; text-align: center; color: #94a3b8; font-size: 11px; font-weight: 600; }
+        .tracking-step::before { position: absolute; z-index: 0; top: 13px; left: 0; width: 100%; height: 2px; content: ''; background: #dbe3ee; }
+        .tracking-step:first-child::before { left: 50%; width: 50%; }
+        .tracking-step:last-child::before { width: 50%; }
+        .tracking-step-dot { position: relative; z-index: 1; display: flex; width: 28px; height: 28px; margin: 0 auto 8px; align-items: center; justify-content: center; border: 2px solid #cbd5e1; border-radius: 50%; background: #fff; color: #64748b; transition: transform .25s ease, background .25s ease, border-color .25s ease; }
+        .tracking-step.is-done,.tracking-step.is-current { color: #1e3a8a; }
+        .tracking-step.is-done::before,.tracking-step.is-current::before { background: #1e3a8a; }
+        .tracking-step.is-done .tracking-step-dot { border-color: #1e3a8a; background: #1e3a8a; color: #fff; }
+        .tracking-step.is-current .tracking-step-dot { transform: scale(1.1); border-color: #f97316; background: #fff7ed; color: #ea580c; box-shadow: 0 0 0 4px rgba(249,115,22,.13); }
+        .tracking-details { padding-top: 12px; border-top: 1px solid #e2e8f0; color: #475569; font-size: 12px; line-height: 1.65; }
+        .tracking-details strong { color: #0f172a; }
+        .tracking-cancelled { padding: 12px 14px; border-radius: 9px; background: #fff1f2; color: #9f1239; font-size: 13px; }
+        @keyframes tracker-open { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+
+        .loading-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #64748B;
+        }
+
+        @media (max-width: 768px) {
+            .booking-header { flex-direction: column; }
+            .booking-body { flex-direction: column; align-items: stretch; }
+            .booking-actions { flex-direction: column; }
+            .booking-actions .btn { width: 100%; }
+            .tracking-panel { padding: 14px 10px; }
+            .tracking-steps { grid-template-columns: 1fr; row-gap: 0; }
+            .tracking-step { display: flex; align-items: center; gap: 10px; padding: 0 0 12px; text-align: left; }
+            .tracking-step::before { top: 26px; bottom: -2px; left: 13px; width: 2px; height: auto; }
+            .tracking-step:first-child::before { left: 13px; width: 2px; }
+            .tracking-step:last-child::before { display: none; }
+            .tracking-step-dot { flex: 0 0 28px; margin: 0; }
+            .tracking-panel-header { flex-direction: column; }
+        }
+    </style>
+    <link rel="stylesheet" href="/assets/css/polish.css">
+</head>
+<body>
+
+<div class="app-shell">
+
+    <aside class="sidebar"></aside>
+
+    <main class="app-main">
+
+        <!-- TOPBAR -->
+        <div class="topbar">
+            <div class="topbar-left">
+                <button class="topbar-toggle" onclick="UI.toggleSidebar()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" d="M4 6h16M4 12h16M4 18h16"/>
+                    </svg>
+                </button>
+                <div class="topbar-search">
+                    <svg class="topbar-search-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="7"/>
+                        <path stroke-linecap="round" d="M21 21l-4.35-4.35"/>
+                    </svg>
+                    <input type="text" id="topSearch" placeholder="Search equipment...">
+                </div>
+            </div>
+            <div class="topbar-right">
+                <button class="topbar-icon-btn" onclick="window.location.href='/customer/chat.html'">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M21 12a8 8 0 11-3.5 6.6L3 21l2.4-6.5A8 8 0 0121 12z"/>
+                    </svg>
+                    <span class="topbar-icon-badge" id="chatBadge" style="display: none;">0</span>
+                </button>
+                <button class="topbar-icon-btn" data-action="logout" title="Logout">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                    </svg>
+                </button>
+                <div class="topbar-user">
+                    <div class="topbar-user-avatar" data-user="initials">?</div>
+                    <div class="topbar-user-meta">
+                        <div class="topbar-user-name" data-user="name">Loading...</div>
+                        <div class="topbar-user-role" data-user="role"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PAGE CONTENT -->
+        <div class="app-content">
+
+            <div class="page-header">
+                <h1 class="page-title">My Bookings</h1>
+                <p class="page-subtitle">Track your current and past equipment rentals</p>
+            </div>
+
+            <div class="tabs" id="tabs">
+                <button class="tab active" data-filter="all">All <span class="tab-count" id="countAll">0</span></button>
+                <button class="tab" data-filter="active">Active <span class="tab-count" id="countActive">0</span></button>
+                <button class="tab" data-filter="pending">Pending Payment <span class="tab-count" id="countPending">0</span></button>
+                <button class="tab" data-filter="completed">Completed <span class="tab-count" id="countCompleted">0</span></button>
+                <button class="tab" data-filter="cancelled">Cancelled <span class="tab-count" id="countCancelled">0</span></button>
+            </div>
+
+            <div class="booking-list" id="bookingList">
+                <div class="loading-state">
+                    <div class="spinner spinner-dark" style="width: 32px; height: 32px; border-width: 3px; display: inline-block;"></div>
+                    <p style="margin-top: 16px;">Loading your bookings...</p>
+                </div>
+            </div>
+
+        </div>
+    </main>
+</div>
+
+<div class="sidebar-overlay" onclick="UI.toggleSidebar()"></div>
+
+<script src="/assets/js/config.js"></script>
+<script src="/assets/js/auth.js"></script>
+<script src="/assets/js/utils.js"></script>
+<script src="/assets/js/api.js"></script>
+<script src="/assets/js/ui.js"></script>
+<script src="/assets/js/sidebar.js"></script>
+<script>
+    const user = Auth.requireAuth('customer');
+    if (!user) throw new Error('Not authorized');
+
+    Sidebar.render();
+    UI.initShell();
+    Sidebar.updateUnreadBadge();
+
+    let allBookings = [];
+    let currentFilter = 'all';
+    const trackingTimers = new Map();
+
+    const STATUS_GROUPS = {
+        active: ['confirmed', 'paid', 'delivered', 'rented'],
+        pending: ['requested'],
+        completed: ['completed', 'returned'],
+        cancelled: ['cancelled']
+    };
+
+    async function init() {
+        try {
+            const data = await Api.getMyBookings();
+            allBookings = data.bookings || [];
+
+            updateCounts();
+            renderBookings();
+            loadChatBadge();
+
+        } catch (err) {
+            console.error('Failed to load bookings:', err);
+            document.getElementById('bookingList').innerHTML =
+                '<div class="alert alert-danger">Failed to load bookings: ' +
+                Utils.escapeHtml(err.message) + '</div>';
+        }
+    }
+
+    async function loadChatBadge() {
+        try {
+            const unread = await Api.getUnreadCount();
+            const badge = document.getElementById('chatBadge');
+            if (unread.unread > 0) {
+                badge.textContent = unread.unread;
+                badge.style.display = 'flex';
+            } else {
+                badge.style.display = 'none';
+            }
+        } catch (e) { /* silent */ }
+    }
+
+    function updateCounts() {
+        document.getElementById('countAll').textContent = allBookings.length;
+
+        Object.keys(STATUS_GROUPS).forEach(function (group) {
+            const statuses = STATUS_GROUPS[group];
+            const count = allBookings.filter(function (b) {
+                return statuses.indexOf(b.status) !== -1;
+            }).length;
+            const el = document.getElementById('count' + group.charAt(0).toUpperCase() + group.slice(1));
+            if (el) el.textContent = count;
+        });
+    }
+
+    function renderBookings() {
+        const container = document.getElementById('bookingList');
+        trackingTimers.forEach(function (timer) { clearInterval(timer); });
+        trackingTimers.clear();
+        let filtered = allBookings;
+
+        if (currentFilter !== 'all') {
+            const statuses = STATUS_GROUPS[currentFilter] || [];
+            filtered = allBookings.filter(function (b) {
+                return statuses.indexOf(b.status) !== -1;
+            });
+        }
+
+        if (filtered.length === 0) {
+            container.innerHTML =
+                '<div class="card">' +
+                    '<div class="empty-state">' +
+                        '<div class="empty-state-title">' +
+                            (currentFilter === 'all'
+                                ? 'No bookings yet'
+                                : 'No ' + currentFilter + ' bookings') +
+                        '</div>' +
+                        '<div class="empty-state-message">' +
+                            (currentFilter === 'all'
+                                ? 'Browse equipment and start planning your next event.'
+                                : 'You have no bookings in this category.') +
+                        '</div>' +
+                        '<a href="/customer/browse.html" class="btn btn-primary">Browse Equipment</a>' +
+                    '</div>' +
+                '</div>';
+            return;
+        }
+
+        container.innerHTML = filtered.map(renderBookingItem).join('');
+        wireActions();
+    }
+
+    function wireActions() {
+        document.querySelectorAll('[data-action="pay"]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                window.location.href = '/customer/payment.html?booking=' + this.dataset.bookingId;
+            });
+        });
+
+        document.querySelectorAll('[data-action="chat"]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                window.location.href = '/customer/chat.html?user=' + this.dataset.ownerId;
+            });
+        });
+
+        document.querySelectorAll('[data-action="cancel"]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                cancelBooking(this.dataset.bookingId, this);
+            });
+        });
+
+        document.querySelectorAll('[data-action="track"]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                toggleTracking(this.dataset.bookingId, this);
+            });
+        });
+    }
+
+    const TRACKING_STEPS = [
+        { status: 'requested', label: 'Requested' },
+        { status: 'confirmed', label: 'Confirmed' },
+        { status: 'paid', label: 'Paid' },
+        { status: 'delivered', label: 'Delivered' },
+        { status: 'rented', label: 'In use' },
+        { status: 'returned', label: 'Returned' }
+    ];
+
+    function renderTrackingPanel(b, checkedAt) {
+        const status = String(b.status || '').toLowerCase();
+        if (status === 'cancelled') {
+            return '<div class="tracking-panel-header"><div><h3 class="tracking-panel-title">Booking tracking</h3><p class="tracking-panel-copy">This booking was cancelled, so equipment fulfilment has stopped.</p></div></div>' +
+                '<div class="tracking-cancelled">Cancelled booking · ' + Utils.escapeHtml(b.booking_ref || '') + '</div>';
+        }
+
+        const currentIndex = status === 'completed' ? TRACKING_STEPS.length - 1 : Math.max(0, TRACKING_STEPS.findIndex(function (step) { return step.status === status; }));
+        const labels = {
+            requested: 'Your request is waiting for the owner to confirm the equipment.',
+            confirmed: 'The owner confirmed your booking. Complete payment to move it forward.',
+            paid: 'Payment is recorded. The owner will update the booking when the equipment is delivered or ready for collection.',
+            delivered: 'The owner marked the equipment as delivered.',
+            rented: 'Your rental is in progress. Contact the owner if you need help during the rental.',
+            returned: 'The owner marked the equipment as returned. The booking is awaiting completion.',
+            completed: 'This rental is complete.'
+        };
+        const steps = TRACKING_STEPS.map(function (step, index) {
+            const done = index < currentIndex || status === 'completed';
+            const current = index === currentIndex && status !== 'completed';
+            const classes = (done ? ' is-done' : '') + (current ? ' is-current' : '');
+            const marker = done ? '✓' : String(index + 1);
+            return '<li class="tracking-step' + classes + '"><span class="tracking-step-dot">' + marker + '</span><span>' + step.label + '</span></li>';
+        }).join('');
+        const address = b.delivery_address
+            ? Utils.escapeHtml(b.delivery_address)
+            : 'No delivery address is recorded for this booking.';
+        const checkText = checkedAt ? 'Updated just now' : 'Status reflects the latest booking update';
+
+        return '<div class="tracking-panel-header"><div><h3 class="tracking-panel-title">Equipment progress</h3><p class="tracking-panel-copy">' + Utils.escapeHtml(labels[status] || 'Your booking status is being updated.') + '</p></div>' +
+            '<p class="tracking-updated" data-tracking-updated>' + checkText + '</p></div>' +
+            '<ol class="tracking-steps" aria-label="Equipment booking progress">' + steps + '</ol>' +
+            '<div class="tracking-details"><strong>Delivery details:</strong> ' + address + '<br><strong>Rental dates:</strong> ' + Utils.formatDate(b.start_date) + ' to ' + Utils.formatDate(b.end_date) + '<br><span>Progress is updated by the equipment owner; this tracker does not show live GPS location.</span></div>';
+    }
+
+    async function refreshTracking(bookingId) {
+        const panel = document.getElementById('trackingPanel-' + bookingId);
+        if (!panel || panel.hidden) return;
+        try {
+            const result = await Api.getBookingById(bookingId);
+            const booking = allBookings.find(function (item) { return Number(item.booking_id) === Number(bookingId); });
+            if (!booking || !result.booking) return;
+            booking.status = result.booking.status;
+            booking.delivery_address = result.booking.delivery_address;
+            panel.innerHTML = renderTrackingPanel(booking, true);
+            const card = panel.closest('.booking-item');
+            const badge = card && card.querySelector('.booking-header .badge');
+            if (badge) badge.outerHTML = Utils.statusBadge(booking.status);
+        } catch (err) {
+            const updated = panel.querySelector('[data-tracking-updated]');
+            if (updated) updated.textContent = 'Could not refresh status';
+        }
+    }
+
+    function toggleTracking(bookingId, button) {
+        const panel = document.getElementById('trackingPanel-' + bookingId);
+        if (!panel) return;
+        const opening = panel.hidden;
+        panel.hidden = !opening;
+        button.setAttribute('aria-expanded', String(opening));
+        button.textContent = opening ? 'Hide Tracking' : 'Track Equipment';
+        if (opening) {
+            refreshTracking(bookingId);
+            if (!trackingTimers.has(String(bookingId))) {
+                const timer = setInterval(function () {
+                    if (document.visibilityState === 'visible') refreshTracking(bookingId);
+                }, 30000);
+                trackingTimers.set(String(bookingId), timer);
+            }
+        } else {
+            clearInterval(trackingTimers.get(String(bookingId)));
+            trackingTimers.delete(String(bookingId));
+        }
+    }
+
+    function renderBookingItem(b) {
+        const imageUrl = b.equipment_image || '';
+        const imageHtml = imageUrl
+            ? '<img src="' + Utils.escapeHtml(imageUrl) + '" alt="" onerror="this.parentElement.innerHTML=\'\'">'
+            : '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">' +
+                '<path stroke-linecap="round" stroke-linejoin="round" d="M12 3l9 7-2 11H5L3 10l9-7z"/>' +
+              '</svg>';
+
+        let actions = '';
+
+        if (b.status === 'requested') {
+            actions +=
+                '<button class="btn btn-outline btn-sm" data-action="chat" data-owner-id="' + b.owner_id + '">' +
+                    'Chat with Owner' +
+                '</button>' +
+                '<button class="btn btn-ghost btn-sm" disabled>Awaiting confirmation</button>';
+        } else if (b.status === 'confirmed') {
+            actions +=
+                '<button class="btn btn-primary btn-sm" data-action="pay" data-booking-id="' + b.booking_id + '">' +
+                    'Pay Now' +
+                '</button>' +
+                '<button class="btn btn-outline btn-sm" data-action="chat" data-owner-id="' + b.owner_id + '">' +
+                    'Chat with Owner' +
+                '</button>' +
+                '<button class="btn btn-danger btn-sm" data-action="cancel" data-booking-id="' + b.booking_id + '">' +
+                    'Cancel' +
+                '</button>';
+        } else if (['paid', 'delivered', 'rented'].indexOf(b.status) !== -1) {
+            actions +=
+                '<button class="btn btn-outline btn-sm" data-action="chat" data-owner-id="' + b.owner_id + '">' +
+                    'Chat with Owner' +
+                '</button>';
+        } else if (['returned', 'completed'].indexOf(b.status) !== -1) {
+            actions +=
+                '<a href="/customer/review.html?booking=' + b.booking_id + '" class="btn btn-outline btn-sm">' +
+                    'Leave a Review' +
+                '</a>' +
+                '<a href="/customer/browse.html" class="btn btn-ghost btn-sm">Book Again</a>';
+        } else if (b.status === 'cancelled') {
+            actions +=
+                '<a href="/customer/browse.html" class="btn btn-ghost btn-sm">Book Similar</a>';
+        }
+
+        actions += '<button class="btn btn-outline btn-sm" data-action="track" data-booking-id="' + b.booking_id + '" aria-expanded="false" aria-controls="trackingPanel-' + b.booking_id + '">Track Equipment</button>';
+
+        return '<div class="booking-item" data-booking-id="' + b.booking_id + '">' +
+            '<div class="booking-header">' +
+                '<div>' +
+                    '<div class="booking-ref">' + Utils.escapeHtml(b.booking_ref) + '</div>' +
+                    '<div class="booking-title">' + Utils.escapeHtml(b.equipment_name || 'Equipment') + '</div>' +
+                    '<div class="booking-date">Booked on ' + Utils.formatDate(b.created_at) + '</div>' +
+                '</div>' +
+                '<div>' + Utils.statusBadge(b.status) + '</div>' +
+            '</div>' +
+
+            '<div class="booking-body">' +
+                '<div class="booking-thumb">' + imageHtml + '</div>' +
+                '<div class="booking-info">' +
+                    '<div class="booking-info-row">' +
+                        '<span class="booking-info-label">Rental Dates</span>' +
+                        '<span class="booking-info-value">' +
+                            Utils.formatDate(b.start_date) + ' to ' + Utils.formatDate(b.end_date) +
+                        '</span>' +
+                    '</div>' +
+                    '<div class="booking-info-row">' +
+                        '<span class="booking-info-label">Quantity</span>' +
+                        '<span class="booking-info-value">' + b.quantity + ' units</span>' +
+                    '</div>' +
+                    '<div class="booking-info-row">' +
+                        '<span class="booking-info-label">Total Amount</span>' +
+                        '<span class="booking-info-value">' + Utils.formatCurrency(b.total_amount) + '</span>' +
+                    '</div>' +
+                    (b.owner_full_name
+                        ? '<div class="booking-info-row">' +
+                            '<span class="booking-info-label">Owner</span>' +
+                            '<span class="booking-info-value">' + Utils.escapeHtml(b.owner_full_name) + '</span>' +
+                          '</div>'
+                        : ''
+                    ) +
+                    (b.mpesa_receipt
+                        ? '<div class="booking-info-row">' +
+                            '<span class="booking-info-label">M-Pesa Receipt</span>' +
+                            '<span class="booking-info-value" style="font-family: monospace; font-size: 12.5px;">' +
+                                Utils.escapeHtml(b.mpesa_receipt) +
+                            '</span>' +
+                          '</div>'
+                        : ''
+                    ) +
+                '</div>' +
+            '</div>' +
+
+            '<div class="tracking-panel" id="trackingPanel-' + b.booking_id + '" hidden>' + renderTrackingPanel(b, false) + '</div>' +
+
+            '<div class="booking-actions">' + actions + '</div>' +
+        '</div>';
+    }
+
+    async function cancelBooking(bookingId, btn) {
+        if (!confirm('Are you sure you want to cancel this booking?')) return;
+
+        const restore = UI.buttonLoading(btn, 'Cancelling...');
+
+        try {
+            await Api.updateBookingStatus(bookingId, 'cancelled');
+            UI.toast('Booking cancelled', 'success');
+
+            // Update local state instead of full reload
+            const item = allBookings.find(function (b) {
+                return b.booking_id === Number(bookingId);
+            });
+            if (item) item.status = 'cancelled';
+
+            updateCounts();
+            renderBookings();
+
+        } catch (err) {
+            UI.toast(err.message || 'Failed to cancel booking', 'error');
+            restore();
+        }
+    }
+
+    document.querySelectorAll('.tab').forEach(function (tab) {
+        tab.addEventListener('click', function () {
+            document.querySelectorAll('.tab').forEach(function (t) {
+                t.classList.remove('active');
+            });
+            tab.classList.add('active');
+            currentFilter = tab.dataset.filter;
+            renderBookings();
+        });
+    });
+
+    document.getElementById('topSearch').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            const q = e.target.value.trim();
+            if (q) window.location.href = '/customer/browse.html?search=' + encodeURIComponent(q);
+        }
+    });
+
+    init();
+</script>
+
+    <script defer src="/assets/js/motion.js"></script>
+</body>
+</html>

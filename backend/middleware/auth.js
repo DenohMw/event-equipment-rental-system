@@ -1,10 +1,11 @@
 const jwt = require('jsonwebtoken');
+const db = require('../config/db');
 require('dotenv').config();
 
 // ============================================
 // VERIFY JWT TOKEN
 // ============================================
-const verifyToken = (req, res, next) => {
+const verifyToken = async (req, res, next) => {
     // Get token from Authorization header
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];  // "Bearer TOKEN"
@@ -18,7 +19,11 @@ const verifyToken = (req, res, next) => {
 
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        req.user = decoded;  // { user_id, role, email, full_name }
+        const [users] = await db.query('SELECT auth_version FROM User WHERE user_id = ?', [decoded.user_id]);
+        if (!users.length || Number(users[0].auth_version) !== Number(decoded.auth_version || 0)) {
+            return res.status(401).json({ status: 'error', message: 'Session expired. Please sign in again.' });
+        }
+        req.user = decoded;  // { user_id, role, email, full_name, auth_version }
         next();
     } catch (err) {
         if (err.name === 'TokenExpiredError') {
@@ -27,10 +32,14 @@ const verifyToken = (req, res, next) => {
                 message: 'Token expired. Please login again.' 
             });
         }
-        return res.status(403).json({ 
+        if (err.name === 'JsonWebTokenError') {
+            return res.status(403).json({ 
             status: 'error',
             message: 'Invalid token.' 
-        });
+            });
+        }
+        console.error('Token validation error:', err.message);
+        return res.status(500).json({ status: 'error', message: 'Could not validate session.' });
     }
 };
 

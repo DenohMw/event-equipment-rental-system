@@ -69,13 +69,13 @@ router.get('/conversations', verifyToken, async (req, res) => {
 // Get full message history with another user
 // ============================================
 
-if (!otherUserId || isNaN(otherUserId) || otherUserId <= 0) {
-    return res.status(400).json({ status: 'error', message: 'Invalid user ID' });
-}
-
 router.get('/history/:otherUserId', verifyToken, async (req, res) => {
     const userId = req.user.user_id;
     const otherUserId = Number(req.params.otherUserId);
+
+    if (!otherUserId || isNaN(otherUserId) || otherUserId <= 0) {
+    return res.status(400).json({ status: 'error', message: 'Invalid user ID' });
+}
     const limit = Math.min(Number(req.query.limit) || 50, 100);
     const offset = Number(req.query.offset) || 0;
 

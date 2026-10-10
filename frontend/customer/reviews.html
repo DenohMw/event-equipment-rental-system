@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="refresh" content="0; url=review.html">
+    <meta name="theme-color" content="#1E3A8A">
+    <link rel="icon" type="image/png" sizes="512x512" href="/assets/images/icons/favicon.png">
+    <link rel="shortcut icon" type="image/png" href="/assets/images/icons/favicon.png">
+    <link rel="apple-touch-icon" sizes="512x512" href="/assets/images/icons/favicon.png">
+    <title>Redirecting to Reviews - EventEquip Kenya</title>
+</head>
+<body>
+    <p>Redirecting to your review… <a id="reviewLink" href="review.html">Continue</a></p>
+    <script>
+        const reviewUrl = 'review.html' + window.location.search + window.location.hash;
+        document.getElementById('reviewLink').href = reviewUrl;
+        window.location.replace(reviewUrl);
+    </script>
+    <script defer src="/assets/js/motion.js"></script>
+</body>
+</html>

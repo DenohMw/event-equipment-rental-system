@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="icon" type="image/png" sizes="512x512" href="/assets/images/icons/favicon.png">
+    <link rel="shortcut icon" type="image/png" href="/assets/images/icons/favicon.png">
+    <link rel="apple-touch-icon" sizes="512x512" href="/assets/images/icons/favicon.png">
+    <meta name="theme-color" content="#1E3A8A">
+    <title>Setup Check</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/assets/css/base.css">
+    <link rel="stylesheet" href="/assets/css/layout.css">
+    <link rel="stylesheet" href="/assets/css/components.css">
+    <link rel="stylesheet" href="/assets/css/pages.css">
+    <link rel="stylesheet" href="/assets/css/polish.css">
+</head>
+<body>
+    <div class="container" style="padding: 40px 24px;">
+        <a href="/" style="display: inline-flex; align-items: center; gap: 10px; margin-bottom: 24px; color: #0F172A; font-weight: 700; text-decoration: none;">
+            <img src="/assets/images/icons/Icon.png" width="40" height="40" alt="">
+            <span>EventEquip <small style="display: block; font-size: 9px; letter-spacing: .15em; color: #64748B;">KENYA</small></span>
+        </a>
+        <h1>Setup Check</h1>
+        <p class="text-muted mb-6">If you see this with Inter font and clean spacing, CSS works.</p>
+        <button class="btn btn-primary" onclick="testApi()">Test API</button>
+        <div id="result" class="mt-6"></div>
+    </div>
+
+    <script src="/assets/js/config.js"></script>
+    <script src="/assets/js/auth.js"></script>
+    <script src="/assets/js/utils.js"></script>
+    <script src="/assets/js/api.js"></script>
+    <script src="/assets/js/ui.js"></script>
+    <script>
+        async function testApi() {
+            const result = document.getElementById('result');
+            result.innerHTML = 'Loading...';
+            try {
+                const data = await Api.getEquipment();
+                result.innerHTML = `<div class="alert alert-success">
+                    API works. ${data.total} equipment items available.
+                </div>`;
+            } catch (err) {
+                result.innerHTML = `<div class="alert alert-danger">
+                    ${Utils.escapeHtml(err.message)}
+                </div>`;
+            }
+        }
+    </script>
+    <script defer src="/assets/js/motion.js"></script>
+</body>
+</html>

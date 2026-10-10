@@ -86,7 +86,7 @@ router.post('/stk-push', verifyToken, requireRole('customer'), async (req, res) 
         console.error('STK Push error:', err);
         res.status(500).json({
             status: 'error',
-            message: err.message || 'Payment initiation failed'
+            message: 'We could not start your payment right now. Please try again shortly.'
         });
     }
 });

@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" sizes="512x512" href="/assets/images/icons/favicon.png">
+    <link rel="shortcut icon" type="image/png" href="/assets/images/icons/favicon.png">
+    <link rel="apple-touch-icon" sizes="512x512" href="/assets/images/icons/favicon.png">
+    <meta name="theme-color" content="#1E3A8A">
+    <title>Equipment Approval - EventEquip Kenya Admin</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/assets/css/base.css">
+    <link rel="stylesheet" href="/assets/css/layout.css">
+    <link rel="stylesheet" href="/assets/css/components.css">
+    <link rel="stylesheet" href="/assets/css/pages.css">
+    <style>
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .stat-box {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 20px;
+        }
+        .stat-box-label {
+            font-size: 12.5px;
+            color: #64748B;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 8px;
+        }
+        .stat-box-value {
+            font-size: 28px;
+            font-weight: 800;
+            color: #0F172A;
+            line-height: 1;
+        }
+
+        .filter-bar {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .filter-bar .form-input {
+            flex: 1;
+            min-width: 200px;
+            padding: 9px 14px;
+        }
+
+        .equipment-cell {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .equipment-thumb {
+            width: 56px;
+            height: 56px;
+            border-radius: 10px;
+            background: #F8FAFC;
+            overflow: hidden;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #94a3b8;
+            border: 1px solid #e2e8f0;
+        }
+        .equipment-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .equipment-thumb svg {
+            width: 24px;
+            height: 24px;
+            stroke-width: 1.5;
+        }
+        .equipment-info {
+            flex: 1;
+            min-width: 0;
+        }
+        .equipment-name {
+            font-size: 13.5px;
+            font-weight: 600;
+            color: #0F172A;
+            margin-bottom: 3px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 320px;
+        }
+        .equipment-category {
+            font-size: 11px;
+            color: #F97316;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .owner-cell {
+            font-size: 13px;
+            color: #0F172A;
+            font-weight: 500;
+        }
+        .owner-business {
+            font-size: 11.5px;
+            color: #64748B;
+            margin-top: 2px;
+        }
+
+        .price-cell {
+            font-size: 13.5px;
+            font-weight: 700;
+            color: #F97316;
+        }
+        .price-cell small {
+            font-size: 11px;
+            color: #64748B;
+            font-weight: 400;
+        }
+
+        .loading-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #64748B;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 6px;
+            justify-content: flex-end;
+        }
+
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.55);
+            backdrop-filter: blur(2px);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+        .modal-backdrop.active {
+            display: flex;
+        }
+        .modal {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 25px rgba(15, 23, 42, 0.15);
+            width: 100%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+        .modal-title {
+            font-size: 17px;
+            font-weight: 700;
+        }
+        .modal-close {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #64748B;
+            cursor: pointer;
+            background: transparent;
+            border: none;
+        }
+        .modal-close:hover {
+            background: #F8FAFC;
+            color: #0F172A;
+        }
+        .modal-body {
+            padding: 24px;
+            overflow-y: auto;
+            flex: 1;
+        }
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #F1F5F9;
+            font-size: 13.5px;
+        }
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+        .detail-label {
+            color: #64748B;
+        }
+        .detail-value {
+            font-weight: 600;
+            color: #0F172A;
+            text-align: right;
+            max-width: 60%;
+        }
+        .modal-footer {
+            padding: 16px 24px;
+            border-top: 1px solid #e2e8f0;
+            background: #F8FAFC;
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+
+        @media (max-width: 768px) {
+            .stats-row {
+                grid-template-columns: 1fr;
+            }
+            .action-buttons {
+                flex-direction: column;
+            }
+            .action-buttons .btn {
+                width: 100%;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="/assets/css/polish.css">
+</head>
+<body>
+
+<div class="app-shell">
+    <aside class="sidebar"></aside>
+
+    <main class="app-main">
+        <div class="topbar">
+            <div class="topbar-left">
+                <button class="topbar-toggle" onclick="UI.toggleSidebar()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" d="M4 6h16M4 12h16M4 18h16"/>
+                    </svg>
+                </button>
+                <div class="topbar-search">
+                    <svg class="topbar-search-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="7"/>
+                        <path stroke-linecap="round" d="M21 21l-4.35-4.35"/>
+                    </svg>
+                    <input type="text" id="topSearch" placeholder="Search equipment...">
+                </div>
+            </div>
+            <div class="topbar-right">
+                <button class="topbar-icon-btn" data-action="logout" title="Logout">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                    </svg>
+                </button>
+                <div class="topbar-user">
+                    <div class="topbar-user-avatar" data-user="initials">?</div>
+                    <div class="topbar-user-meta">
+                        <div class="topbar-user-name" data-user="name">Loading...</div>
+                        <div class="topbar-user-role" data-user="role"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="app-content">
+            <div class="page-header">
+                <h1 class="page-title">Equipment Approval</h1>
+                <p class="page-subtitle">Review new equipment listings before they appear in the marketplace</p>
+            </div>
+
+            <div class="stats-row">
+                <div class="stat-box">
+                    <div class="stat-box-label">Pending Review</div>
+                    <div class="stat-box-value" id="statPending" style="color: #F59E0B;">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-box-label">Approved (Active)</div>
+                    <div class="stat-box-value" id="statApproved" style="color: #10B981;">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-box-label">Total Listings</div>
+                    <div class="stat-box-value" id="statTotal" style="color: #1E3A8A;">0</div>
+                </div>
+            </div>
+
+            <div class="filter-bar">
+                <input type="text" class="form-input" id="searchInput" placeholder="Search by name, category, owner or location...">
+            </div>
+
+            <div id="equipmentTable">
+                <div class="loading-state">
+                    <div class="spinner spinner-dark" style="width: 32px; height: 32px; border-width: 3px; display: inline-block;"></div>
+                    <p style="margin-top: 16px;">Loading pending equipment...</p>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<div class="modal-backdrop" id="detailModal">
+    <div class="modal">
+        <div class="modal-header">
+            <div class="modal-title">Equipment Details</div>
+            <button class="modal-close" onclick="closeDetailModal()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body" id="detailBody"></div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="closeDetailModal()">Close</button>
+        </div>
+    </div>
+</div>
+
+<div class="sidebar-overlay" onclick="UI.toggleSidebar()"></div>
+
+<script src="/assets/js/config.js"></script>
+<script src="/assets/js/auth.js"></script>
+<script src="/assets/js/utils.js"></script>
+<script src="/assets/js/api.js"></script>
+<script src="/assets/js/ui.js"></script>
+<script src="/assets/js/sidebar.js"></script>
+<script>
+    const user = Auth.requireAuth('admin');
+    if (!user) throw new Error('Not authorized');
+
+    Sidebar.render();
+    UI.initShell();
+
+    let pendingEquipment = [];
+    let searchQuery = '';
+
+    async function init() {
+        try {
+            // Fetch pending equipment and stats in parallel
+            const [pendingData, statsData] = await Promise.all([
+                Api.adminPendingEquipment(),
+                Api.adminStats()
+            ]);
+
+            pendingEquipment = pendingData.equipment || [];
+
+            document.getElementById('statPending').textContent = statsData.stats.pendingEquipmentApprovals;
+            document.getElementById('statApproved').textContent = statsData.stats.totalEquipment;
+            document.getElementById('statTotal').textContent =
+                statsData.stats.totalEquipment + statsData.stats.pendingEquipmentApprovals;
+
+            renderEquipment();
+
+        } catch (err) {
+            console.error('Failed to load equipment:', err);
+            document.getElementById('equipmentTable').innerHTML =
+                '<div class="alert alert-danger">Failed to load equipment: ' +
+                Utils.escapeHtml(err.message) + '</div>';
+        }
+    }
+
+    function renderEquipment() {
+        const container = document.getElementById('equipmentTable');
+        let filtered = pendingEquipment;
+
+        if (searchQuery) {
+            const q = searchQuery.toLowerCase();
+            filtered = filtered.filter(function (e) {
+                return (e.name || '').toLowerCase().indexOf(q) !== -1 ||
+                       (e.category_name || '').toLowerCase().indexOf(q) !== -1 ||
+                       (e.owner_name || '').toLowerCase().indexOf(q) !== -1 ||
+                       (e.business_name || '').toLowerCase().indexOf(q) !== -1 ||
+                       (e.location || '').toLowerCase().indexOf(q) !== -1;
+            });
+        }
+
+        if (filtered.length === 0) {
+            container.innerHTML = '<div class="card">' +
+                '<div class="empty-state">' +
+                    '<div class="empty-state-title">' +
+                        (pendingEquipment.length === 0 ? 'No pending equipment' : 'No equipment matches your search') +
+                    '</div>' +
+                    '<div class="empty-state-message">' +
+                        (pendingEquipment.length === 0
+                            ? 'All equipment listings have been reviewed. New submissions will appear here.'
+                            : 'Try a different search term.') +
+                    '</div>' +
+                '</div>' +
+            '</div>';
+            return;
+        }
+
+        const rows = filtered.map(renderEquipmentRow).join('');
+
+        container.innerHTML =
+            '<div class="table-wrapper">' +
+                '<table class="table">' +
+                    '<thead>' +
+                        '<tr>' +
+                            '<th>Equipment</th>' +
+                            '<th>Owner</th>' +
+                            '<th>Price</th>' +
+                            '<th>Quantity</th>' +
+                            '<th>Location</th>' +
+                            '<th>Submitted</th>' +
+                            '<th style="text-align: right;">Actions</th>' +
+                        '</tr>' +
+                    '</thead>' +
+                    '<tbody>' + rows + '</tbody>' +
+                '</table>' +
+            '</div>';
+
+        wireActions();
+    }
+
+    function renderEquipmentRow(e) {
+        const imageUrl = Utils.imageUrl(e.primary_image || '');
+        const imageHtml = imageUrl
+            ? '<img src="' + Utils.escapeHtml(imageUrl) + '" alt="" onerror="this.parentElement.innerHTML=\'\'">'
+            : '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3l9 7-2 11H5L3 10l9-7z"/></svg>';
+
+        return '<tr>' +
+            '<td>' +
+                '<div class="equipment-cell">' +
+                    '<div class="equipment-thumb">' + imageHtml + '</div>' +
+                    '<div class="equipment-info">' +
+                        '<div class="equipment-name" title="' + Utils.escapeHtml(e.name) + '">' +
+                            Utils.escapeHtml(e.name) +
+                        '</div>' +
+                        '<div class="equipment-category">' +
+                            Utils.escapeHtml(e.category_name || '') +
+                        '</div>' +
+                    '</div>' +
+                '</div>' +
+            '</td>' +
+            '<td>' +
+                '<div class="owner-cell">' + Utils.escapeHtml(e.owner_name || '-') + '</div>' +
+                '<div class="owner-business">' + Utils.escapeHtml(e.business_name || '') + '</div>' +
+            '</td>' +
+            '<td>' +
+                '<div class="price-cell">' +
+                    Utils.formatCurrency(e.price_per_day) +
+                    ' <small>/ day</small>' +
+                '</div>' +
+            '</td>' +
+            '<td>' + e.quantity_total + ' units</td>' +
+            '<td>' + Utils.escapeHtml(e.location || '-') + '</td>' +
+            '<td>' + Utils.formatDate(e.created_at) + '</td>' +
+            '<td>' +
+                '<div class="action-buttons">' +
+                    '<button class="btn btn-outline btn-sm" data-action="view" data-equipment="' + e.equipment_id + '">' +
+                        'View' +
+                    '</button>' +
+                    '<button class="btn btn-success btn-sm" data-action="approve" data-equipment="' + e.equipment_id + '">' +
+                        'Approve' +
+                    '</button>' +
+                    '<button class="btn btn-danger btn-sm" data-action="reject" data-equipment="' + e.equipment_id + '">' +
+                        'Reject' +
+                    '</button>' +
+                '</div>' +
+            '</td>' +
+        '</tr>';
+    }
+
+    function wireActions() {
+        document.querySelectorAll('[data-action="view"]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                showDetail(this.dataset.equipment);
+            });
+        });
+        document.querySelectorAll('[data-action="approve"]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                approveEquipment(this.dataset.equipment, true, this);
+            });
+        });
+        document.querySelectorAll('[data-action="reject"]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                approveEquipment(this.dataset.equipment, false, this);
+            });
+        });
+    }
+
+    function showDetail(equipmentId) {
+        const e = pendingEquipment.find(function (x) {
+            return x.equipment_id === Number(equipmentId);
+        });
+        if (!e) return;
+
+        const imageHtml = e.primary_image
+            ? '<img src="' + Utils.escapeHtml(Utils.imageUrl(e.primary_image)) + '" alt="" style="width: 100%; border-radius: 10px; margin-bottom: 20px;" onerror="this.style.display=\'none\'">'
+            : '';
+
+        document.getElementById('detailBody').innerHTML =
+            imageHtml +
+            '<div class="detail-row">' +
+                '<span class="detail-label">Name</span>' +
+                '<span class="detail-value">' + Utils.escapeHtml(e.name) + '</span>' +
+            '</div>' +
+            '<div class="detail-row">' +
+                '<span class="detail-label">Category</span>' +
+                '<span class="detail-value">' + Utils.escapeHtml(e.category_name || '-') + '</span>' +
+            '</div>' +
+            '<div class="detail-row">' +
+                '<span class="detail-label">Owner</span>' +
+                '<span class="detail-value">' + Utils.escapeHtml(e.owner_name || '-') + '</span>' +
+            '</div>' +
+            '<div class="detail-row">' +
+                '<span class="detail-label">Business</span>' +
+                '<span class="detail-value">' + Utils.escapeHtml(e.business_name || '-') + '</span>' +
+            '</div>' +
+            '<div class="detail-row">' +
+                '<span class="detail-label">Price</span>' +
+                '<span class="detail-value">' + Utils.formatCurrency(e.price_per_day) + ' / day</span>' +
+            '</div>' +
+            '<div class="detail-row">' +
+                '<span class="detail-label">Quantity</span>' +
+                '<span class="detail-value">' + e.quantity_total + ' units</span>' +
+            '</div>' +
+            '<div class="detail-row">' +
+                '<span class="detail-label">Location</span>' +
+                '<span class="detail-value">' + Utils.escapeHtml(e.location || '-') + '</span>' +
+            '</div>' +
+            '<div class="detail-row">' +
+                '<span class="detail-label">Description</span>' +
+                '<span class="detail-value">' + Utils.escapeHtml(e.description || 'No description provided.') + '</span>' +
+            '</div>';
+
+        document.getElementById('detailModal').classList.add('active');
+    }
+
+    function closeDetailModal() {
+        document.getElementById('detailModal').classList.remove('active');
+    }
+
+    async function approveEquipment(equipmentId, approve, btn) {
+        const action = approve ? 'approve' : 'reject and permanently delete';
+        if (!confirm('Are you sure you want to ' + action + ' this listing?')) return;
+
+        const restore = UI.buttonLoading(btn, 'Processing...');
+
+        try {
+            await Api.adminApproveEquipment(equipmentId, approve);
+            UI.toast('Equipment ' + (approve ? 'approved' : 'rejected'), 'success');
+
+            // Reload everything
+            await init();
+
+        } catch (err) {
+            UI.toast(err.message || 'Failed to process equipment', 'error');
+            restore();
+        }
+    }
+
+    document.getElementById('searchInput').addEventListener('input', function (e) {
+        searchQuery = e.target.value.trim();
+        renderEquipment();
+    });
+
+    document.getElementById('topSearch').addEventListener('input', function (e) {
+        searchQuery = e.target.value.trim();
+        document.getElementById('searchInput').value = e.target.value;
+        renderEquipment();
+    });
+
+    document.getElementById('detailModal').addEventListener('click', function (e) {
+        if (e.target === this) closeDetailModal();
+    });
+
+    init();
+</script>
+
+    <script defer src="/assets/js/motion.js"></script>
+</body>
+</html>

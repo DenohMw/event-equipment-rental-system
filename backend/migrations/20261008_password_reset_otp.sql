@@ -1,0 +1,2 @@
+ALTER TABLE PasswordResetToken
+    ADD COLUMN attempts TINYINT UNSIGNED NOT NULL DEFAULT 0 AFTER token_hash;

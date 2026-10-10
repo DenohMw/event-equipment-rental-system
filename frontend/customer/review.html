@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" sizes="512x512" href="/assets/images/icons/favicon.png">
+    <link rel="shortcut icon" type="image/png" href="/assets/images/icons/favicon.png">
+    <link rel="apple-touch-icon" sizes="512x512" href="/assets/images/icons/favicon.png">
+    <meta name="theme-color" content="#1E3A8A">
+    <title>Leave a Review - EventEquip Kenya</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/assets/css/base.css">
+    <link rel="stylesheet" href="/assets/css/layout.css">
+    <link rel="stylesheet" href="/assets/css/components.css">
+    <link rel="stylesheet" href="/assets/css/pages.css">
+    <style>
+        .review-shell {
+            max-width: 640px;
+            margin: 0 auto;
+        }
+
+        .review-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 32px;
+        }
+
+        .booking-preview {
+            display: flex;
+            gap: 16px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid #e2e8f0;
+            margin-bottom: 28px;
+        }
+        .booking-preview-thumb {
+            width: 80px;
+            height: 80px;
+            border-radius: 12px;
+            background: #F8FAFC;
+            overflow: hidden;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #94a3b8;
+        }
+        .booking-preview-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .booking-preview-thumb svg {
+            width: 36px;
+            height: 36px;
+            stroke-width: 1.5;
+        }
+        .booking-preview-info { flex: 1; min-width: 0; }
+        .booking-preview-ref {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: #F97316;
+            margin-bottom: 4px;
+        }
+        .booking-preview-title {
+            font-size: 17px;
+            font-weight: 700;
+            color: #0F172A;
+            margin-bottom: 4px;
+            line-height: 1.3;
+        }
+        .booking-preview-meta {
+            font-size: 13px;
+            color: #64748B;
+        }
+
+        .star-rating {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .star-btn {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 4px;
+            transition: transform 0.15s ease;
+            color: #cbd5e1;
+        }
+        .star-btn:hover {
+            transform: scale(1.15);
+        }
+        .star-btn.active {
+            color: #F59E0B;
+        }
+        .star-btn svg {
+            width: 40px;
+            height: 40px;
+            fill: currentColor;
+            stroke: none;
+        }
+        .rating-label {
+            font-size: 14px;
+            font-weight: 600;
+            color: #0F172A;
+            min-height: 20px;
+            margin-bottom: 20px;
+        }
+
+        .recommend-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            background: #F8FAFC;
+            border-radius: 10px;
+            margin-top: 20px;
+            gap: 16px;
+        }
+        .recommend-toggle-text {
+            font-size: 13.5px;
+            font-weight: 600;
+            color: #0F172A;
+        }
+        .recommend-toggle-desc {
+            font-size: 12px;
+            color: #64748B;
+            margin-top: 2px;
+        }
+
+        .loading-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #64748B;
+        }
+
+        @media (max-width: 600px) {
+            .review-card { padding: 24px 20px; }
+            .star-btn svg { width: 32px; height: 32px; }
+        }
+    </style>
+    <link rel="stylesheet" href="/assets/css/polish.css">
+</head>
+<body>
+
+<div class="app-shell">
+
+    <aside class="sidebar"></aside>
+
+    <main class="app-main">
+
+        <div class="topbar">
+            <div class="topbar-left">
+                <button class="topbar-toggle" onclick="UI.toggleSidebar()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" d="M4 6h16M4 12h16M4 18h16"/>
+                    </svg>
+                </button>
+                <div class="topbar-search">
+                    <svg class="topbar-search-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="7"/>
+                        <path stroke-linecap="round" d="M21 21l-4.35-4.35"/>
+                    </svg>
+                    <input type="text" id="topSearch" placeholder="Search equipment...">
+                </div>
+            </div>
+            <div class="topbar-right">
+                <button class="topbar-icon-btn" onclick="window.location.href='/customer/chat.html'">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M21 12a8 8 0 11-3.5 6.6L3 21l2.4-6.5A8 8 0 0121 12z"/>
+                    </svg>
+                    <span class="topbar-icon-badge" id="chatBadge" style="display: none;">0</span>
+                </button>
+                <button class="topbar-icon-btn" data-action="logout" title="Logout">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                    </svg>
+                </button>
+                <div class="topbar-user">
+                    <div class="topbar-user-avatar" data-user="initials">?</div>
+                    <div class="topbar-user-meta">
+                        <div class="topbar-user-name" data-user="name">Loading...</div>
+                        <div class="topbar-user-role" data-user="role"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="app-content">
+            <div class="review-shell" id="reviewShell">
+                <div class="loading-state">
+                    <div class="spinner spinner-dark" style="width: 32px; height: 32px; border-width: 3px; display: inline-block;"></div>
+                    <p style="margin-top: 16px;">Loading booking details...</p>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<div class="sidebar-overlay" onclick="UI.toggleSidebar()"></div>
+
+<script src="/assets/js/config.js"></script>
+<script src="/assets/js/auth.js"></script>
+<script src="/assets/js/utils.js"></script>
+<script src="/assets/js/api.js"></script>
+<script src="/assets/js/ui.js"></script>
+<script src="/assets/js/sidebar.js"></script>
+<script>
+    const user = Auth.requireAuth('customer');
+    if (!user) throw new Error('Not authorized');
+
+    Sidebar.render();
+    UI.initShell();
+    Sidebar.updateUnreadBadge();
+
+    const bookingParam = Utils.getQueryParam('booking') ||
+        Utils.getQueryParam('booking_id') || Utils.getQueryParam('bookingId');
+    const bookingId = /^\d+$/.test(bookingParam || '') ? bookingParam : null;
+    let booking = null;
+    let existingReview = null;
+    let rating = 0;
+    let recommend = true;
+
+    const RATING_LABELS = {
+        0: '',
+        1: 'Poor',
+        2: 'Fair',
+        3: 'Good',
+        4: 'Very Good',
+        5: 'Excellent'
+    };
+
+    async function init() {
+        if (!bookingId) {
+            renderError('Booking unavailable', 'Open this page from a completed booking in My Bookings.');
+            return;
+        }
+
+        try {
+            // Fetch booking
+            const bookingData = await Api.getBookingById(bookingId);
+            booking = bookingData.booking;
+            if (!booking || !booking.booking_id) {
+                renderError('Booking unavailable', 'We could not find this booking. Return to My Bookings and try again.');
+                return;
+            }
+
+            // Check review state
+            if (booking.status !== 'completed' && booking.status !== 'returned') {
+                renderError(
+                    'Cannot review this booking',
+                    'You can leave a review after the rental has been completed or the equipment has been returned.'
+                );
+                return;
+            }
+
+            // Check for existing review
+            const reviewData = await Api.getReviewForBooking(bookingId);
+            existingReview = reviewData.review;
+
+            if (existingReview) {
+                renderExistingReview();
+                return;
+            }
+
+            renderReviewForm();
+
+        } catch (err) {
+            console.error('Failed to load review page:', err);
+            renderError('We could not load this booking', err.message || 'Please return to My Bookings and try again.');
+        }
+    }
+
+    function renderError(title, message) {
+        document.getElementById('reviewShell').innerHTML =
+            '<div class="review-card">' +
+                '<div class="empty-state">' +
+                    '<div class="empty-state-title">' + Utils.escapeHtml(title) + '</div>' +
+                    '<div class="empty-state-message">' + Utils.escapeHtml(message) + '</div>' +
+                    '<a href="/customer/bookings.html" class="btn btn-primary">Back to My Bookings</a>' +
+                '</div>' +
+            '</div>';
+    }
+
+    function renderExistingReview() {
+        const stars = renderStaticStars(existingReview.rating);
+
+        document.getElementById('reviewShell').innerHTML =
+            '<div class="card">' +
+                '<div class="card-header">' +
+                    '<div>' +
+                        '<div class="card-title">Your Review</div>' +
+                        '<div class="card-subtitle">Submitted ' + Utils.formatDate(existingReview.created_at) + '</div>' +
+                    '</div>' +
+                '</div>' +
+                '<div style="padding: 24px;">' +
+                    '<div style="display: flex; gap: 4px; margin-bottom: 12px; color: #F59E0B;">' + stars + '</div>' +
+                    (existingReview.comment
+                        ? '<p style="font-size: 14.5px; line-height: 1.7; color: #334155; margin-bottom: 20px;">' +
+                            Utils.escapeHtml(existingReview.comment) +
+                          '</p>'
+                        : ''
+                    ) +
+                    '<div class="alert alert-info" style="margin-bottom: 0;">' +
+                        'You have already reviewed this booking. Thank you for your feedback!' +
+                    '</div>' +
+                '</div>' +
+                '<div style="padding: 0 24px 24px;">' +
+                    '<a href="/customer/bookings.html" class="btn btn-primary">Back to My Bookings</a>' +
+                '</div>' +
+            '</div>';
+    }
+
+    function renderStaticStars(count) {
+        let html = '';
+        for (let i = 1; i <= 5; i++) {
+            html += '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" ' +
+                'fill="' + (i <= count ? '#F59E0B' : '#cbd5e1') + '">' +
+                '<path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>' +
+            '</svg>';
+        }
+        return html;
+    }
+
+    function renderReviewForm() {
+        const imageUrl = booking.equipment_image || '';
+        const imageHtml = imageUrl
+            ? '<img src="' + Utils.escapeHtml(imageUrl) + '" alt="" onerror="this.parentElement.innerHTML=\'\'">'
+            : '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3l9 7-2 11H5L3 10l9-7z"/></svg>';
+
+        let starsHtml = '';
+        for (let i = 1; i <= 5; i++) {
+            starsHtml += '<button type="button" class="star-btn" data-star="' + i + '" ' +
+                'onclick="setRating(' + i + ')" ' +
+                'onmouseenter="hoverRating(' + i + ')" ' +
+                'onmouseleave="unhoverRating()">' +
+                '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">' +
+                    '<path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>' +
+                '</svg>' +
+            '</button>';
+        }
+
+        document.getElementById('reviewShell').innerHTML =
+            '<div class="review-card">' +
+                '<div class="booking-preview">' +
+                    '<div class="booking-preview-thumb">' + imageHtml + '</div>' +
+                    '<div class="booking-preview-info">' +
+                        '<div class="booking-preview-ref">' + Utils.escapeHtml(booking.booking_ref) + '</div>' +
+                        '<div class="booking-preview-title">' + Utils.escapeHtml(booking.equipment_name) + '</div>' +
+                        '<div class="booking-preview-meta">' +
+                            'From ' + Utils.escapeHtml(booking.owner_full_name || booking.owner_name || 'the owner') +
+                            ' &middot; ' +
+                            Utils.formatDate(booking.start_date) + ' to ' + Utils.formatDate(booking.end_date) +
+                        '</div>' +
+                    '</div>' +
+                '</div>' +
+
+                '<h2 style="font-size: 20px; font-weight: 700; margin-bottom: 6px;">How was your experience?</h2>' +
+                '<p style="font-size: 13.5px; color: #64748B; margin-bottom: 24px;">' +
+                    'Your feedback helps other customers and the owner improve.' +
+                '</p>' +
+
+                '<div style="font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px;">' +
+                    'Your Rating' +
+                '</div>' +
+                '<div class="star-rating" id="starRating">' + starsHtml + '</div>' +
+                '<div class="rating-label" id="ratingLabel"></div>' +
+
+                '<div class="form-group">' +
+                    '<label class="form-label">Your Review</label>' +
+                    '<textarea class="form-textarea" id="reviewComment" rows="5" ' +
+                        'placeholder="Share your experience with this equipment and owner..."></textarea>' +
+                    '<div class="form-hint">Optional. Be honest and constructive.</div>' +
+                '</div>' +
+
+                '<div class="recommend-toggle">' +
+                    '<div>' +
+                        '<div class="recommend-toggle-text">Would you recommend this owner?</div>' +
+                        '<div class="recommend-toggle-desc">This helps other customers know what to expect.</div>' +
+                    '</div>' +
+                    '<label class="toggle">' +
+                        '<input type="checkbox" id="recommendToggle" checked onchange="toggleRecommend(this.checked)">' +
+                        '<span class="toggle-slider"></span>' +
+                    '</label>' +
+                '</div>' +
+
+                '<div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 28px;">' +
+                    '<a href="/customer/bookings.html" class="btn btn-outline">Cancel</a>' +
+                    '<button class="btn btn-primary btn-lg" id="submitBtn">' +
+                        'Submit Review' +
+                    '</button>' +
+                '</div>' +
+            '</div>';
+
+        document.getElementById('submitBtn').addEventListener('click', submitReview);
+    }
+
+    function setRating(value) {
+        rating = value;
+        updateStarVisuals(value);
+        document.getElementById('ratingLabel').textContent = RATING_LABELS[value] || '';
+    }
+
+    function hoverRating(value) {
+        updateStarVisuals(value, true);
+    }
+
+    function unhoverRating() {
+        updateStarVisuals(rating);
+    }
+
+    function updateStarVisuals(value, isHover) {
+        document.querySelectorAll('#starRating .star-btn').forEach(function (btn) {
+            const star = Number(btn.dataset.star);
+            btn.classList.toggle('active', star <= value);
+        });
+
+        if (isHover) {
+            document.getElementById('ratingLabel').textContent = RATING_LABELS[value] || '';
+        }
+    }
+
+    function toggleRecommend(value) {
+        recommend = value;
+    }
+
+    async function submitReview() {
+        if (rating < 1) {
+            UI.toast('Please select a rating', 'warning');
+            return;
+        }
+
+        const comment = document.getElementById('reviewComment').value.trim();
+        const btn = document.getElementById('submitBtn');
+        const restore = UI.buttonLoading(btn, 'Submitting...');
+
+        try {
+            await Api.submitReview({
+                booking_id: Number(bookingId),
+                rating: rating,
+                comment: comment || null,
+                is_recommended: recommend
+            });
+
+            UI.toast('Review submitted successfully', 'success');
+
+            setTimeout(function () {
+                window.location.href = '/customer/bookings.html';
+            }, 1000);
+
+        } catch (err) {
+            console.error('Submit review error:', err);
+            UI.toast(err.message || 'Failed to submit review', 'error');
+            restore();
+        }
+    }
+
+    document.getElementById('topSearch').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            const q = e.target.value.trim();
+            if (q) window.location.href = '/customer/browse.html?search=' + encodeURIComponent(q);
+        }
+    });
+
+    init();
+</script>
+
+    <script defer src="/assets/js/motion.js"></script>
+</body>
+</html>

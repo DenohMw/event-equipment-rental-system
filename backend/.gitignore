@@ -1,10 +1,24 @@
 # Dependencies
 node_modules/
 
-# Environment variables (NEVER commit)
+# Environment variables and local secrets (NEVER commit)
 .env
 .env.local
-.env.production
+.env.*
+!.env.example
+
+# Credentials and private keys
+credentials.json
+credentials.*.json
+secrets.json
+secrets.*.json
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+id_rsa
+id_ed25519
 
 # Logs
 *.log

@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#102b50">
+    <link rel="icon" type="image/png" sizes="512x512" href="/assets/images/icons/favicon.png">
+    <link rel="shortcut icon" type="image/png" href="/assets/images/icons/favicon.png">
+    <link rel="apple-touch-icon" sizes="512x512" href="/assets/images/icons/favicon.png">
+    <title>Create an account | EventEquip Kenya</title>
+    <link rel="stylesheet" href="/assets/css/base.css">
+    <link rel="stylesheet" href="/assets/css/components.css">
+    <link rel="stylesheet" href="/assets/css/auth-pages.css">
+    <link rel="stylesheet" href="/assets/css/polish.css">
+</head>
+<body class="auth-page">
+    <div class="auth-layout">
+        <aside class="auth-visual" aria-label="EventEquip">
+            <a class="auth-brand" href="/">
+                <img src="/assets/images/icons/Icon.png" alt="">
+                <span><span class="auth-brand-name">EventEquip</span><span class="auth-brand-region">KENYA</span></span>
+            </a>
+            <div class="auth-visual-copy">
+                <p class="auth-eyebrow">Your event starts here</p>
+                <h1>Bring your next gathering to life.</h1>
+                <p>Book the essentials for your celebration, or grow your rental business by sharing your equipment.</p>
+            </div>
+            <div class="auth-visual-footer">Book · Rent · Celebrate</div>
+        </aside>
+
+        <main class="auth-main">
+            <section class="auth-card" aria-labelledby="registerTitle">
+                <header class="auth-header">
+                    <span class="auth-kicker">Get started</span>
+                    <h1 class="auth-title" id="registerTitle">Create your account</h1>
+                    <p class="auth-subtitle">Choose your account type and enter your details.</p>
+                </header>
+
+                <div id="alertBox" class="auth-alert" style="display:none" role="status" aria-live="polite"></div>
+
+                <div class="auth-role-selector" role="group" aria-label="Choose account type">
+                    <button type="button" class="auth-role-option active" data-role="customer" aria-pressed="true">
+                        <span class="auth-role-label">Customer</span>
+                        <span class="auth-role-description">Rent equipment</span>
+                    </button>
+                    <button type="button" class="auth-role-option" data-role="owner" aria-pressed="false">
+                        <span class="auth-role-label">Equipment owner</span>
+                        <span class="auth-role-description">List your equipment</span>
+                    </button>
+                </div>
+
+                <form id="registerForm" class="auth-form" novalidate>
+                    <div class="form-group">
+                        <label class="form-label" for="full_name">Full name <span class="auth-required">*</span></label>
+                        <input type="text" id="full_name" class="form-input" placeholder="e.g. James Mwangi" required autocomplete="name">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="email">Email address <span class="auth-required">*</span></label>
+                        <input type="email" id="email" class="form-input" placeholder="you@example.com" required autocomplete="email">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="phone">Phone number <span class="auth-required">*</span></label>
+                        <input type="tel" id="phone" class="form-input" placeholder="0712 345 678" required autocomplete="tel">
+                        <div class="form-hint">Use a Kenyan mobile number.</div>
+                    </div>
+                    <div class="form-group" id="businessNameGroup" style="display:none">
+                        <label class="form-label" for="business_name">Business name <span class="auth-required">*</span></label>
+                        <input type="text" id="business_name" class="form-input" placeholder="e.g. Sarah's Event Rentals" autocomplete="organization">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="password">Password <span class="auth-required">*</span></label>
+                        <div class="password-field"><input type="password" id="password" class="form-input" placeholder="At least 8 characters" required minlength="8" autocomplete="new-password"><button type="button" class="password-toggle" data-password-toggle="password" aria-label="Show password" aria-pressed="false">Show</button></div>
+                    </div>
+                    <div class="auth-terms">
+                        <label class="auth-check" for="acceptTerms">
+                            <input type="checkbox" id="acceptTerms" required>
+                            <span>I agree to the <a href="/terms.html" target="_blank" rel="noopener">Terms and Conditions</a>.</span>
+                        </label>
+                    </div>
+                    <button type="submit" class="auth-button auth-button-block" id="submitBtn">Create account</button>
+                </form>
+
+                <p class="auth-footer">Already have an account? <a class="auth-link" href="/login.html">Sign in</a></p>
+            </section>
+        </main>
+    </div>
+
+    <script src="/assets/js/config.js"></script>
+    <script src="/assets/js/auth.js"></script>
+    <script src="/assets/js/utils.js"></script>
+    <script src="/assets/js/api.js"></script>
+    <script src="/assets/js/ui.js"></script>
+    <script src="/assets/js/password-toggle.js"></script>
+    <script>
+        Auth.redirectIfLoggedIn();
+        let selectedRole = 'customer';
+        const roleParam = Utils.getQueryParam('role');
+        if (roleParam === 'owner') selectRole('owner');
+
+        document.querySelectorAll('.auth-role-option').forEach(function (button) {
+            button.addEventListener('click', function () { selectRole(button.dataset.role); });
+        });
+
+        function selectRole(role) {
+            selectedRole = role;
+            document.querySelectorAll('.auth-role-option').forEach(function (button) {
+                const selected = button.dataset.role === role;
+                button.classList.toggle('active', selected);
+                button.setAttribute('aria-pressed', String(selected));
+            });
+            const businessGroup = document.getElementById('businessNameGroup');
+            const businessInput = document.getElementById('business_name');
+            businessGroup.style.display = role === 'owner' ? 'block' : 'none';
+            businessInput.required = role === 'owner';
+            if (role !== 'owner') businessInput.value = '';
+        }
+
+        function showAlert(message, type) {
+            const alertBox = document.getElementById('alertBox');
+            alertBox.className = 'alert alert-' + type + ' auth-alert';
+            alertBox.textContent = message;
+            alertBox.style.display = 'flex';
+        }
+
+        document.getElementById('registerForm').addEventListener('submit', async function (event) {
+            event.preventDefault();
+            const fullName = document.getElementById('full_name').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const phone = document.getElementById('phone').value.trim();
+            const password = document.getElementById('password').value;
+            const businessName = document.getElementById('business_name').value.trim();
+
+            if (fullName.length < 2) return showAlert('Enter your full name.', 'danger');
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return showAlert('Enter a valid email address.', 'danger');
+            if (!Utils.isValidKenyanPhone(phone)) return showAlert('Enter a valid Kenyan phone number.', 'danger');
+            if (password.length < 8) return showAlert('Password must be at least 8 characters.', 'danger');
+            if (selectedRole === 'owner' && businessName.length < 2) return showAlert('Enter your business name.', 'danger');
+            if (!document.getElementById('acceptTerms').checked) return showAlert('Accept the Terms and Conditions to create an account.', 'danger');
+
+            const payload = {
+                full_name: fullName,
+                email: email,
+                phone: Utils.normalisePhone(phone),
+                password: password,
+                role: selectedRole,
+                accept_terms: true
+            };
+            if (selectedRole === 'owner') payload.business_name = businessName;
+
+            const button = document.getElementById('submitBtn');
+            const restore = UI.buttonLoading(button, 'Creating account...');
+            try {
+                const result = await Api.register(payload);
+                Storage.save(result.token, result.user);
+                showAlert('Account created. Redirecting...', 'success');
+                setTimeout(function () { Auth.redirectToDashboard(result.user.role); }, 600);
+            } catch (err) {
+                showAlert(err.message || 'Registration failed. Please try again.', 'danger');
+                restore();
+            }
+        });
+    </script>
+    <script defer src="/assets/js/motion.js"></script>
+</body>
+</html>
